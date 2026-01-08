@@ -21,7 +21,7 @@ export function RichMenuList({ richMenus, defaultRichMenuId }: RichMenuListProps
         startTransition(async () => {
             const result = await setDefaultRichMenu(id);
             if (result.success) {
-                toast({ title: "Updated", description: "Default rich menu set." });
+                toast({ title: "บันทึกเรียบร้อย", description: "ตั้งค่าเมนูหลักเรียบร้อยแล้ว" });
             } else {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             }
@@ -29,14 +29,14 @@ export function RichMenuList({ richMenus, defaultRichMenuId }: RichMenuListProps
     };
 
     const handleDelete = (id: string) => {
-        if (!confirm("Are you sure? This action cannot be undone.")) return;
+        if (!confirm("คุณแน่ใจหรือไม่? ลบแล้วไม่สามารถกู้คืนได้")) return;
 
         startTransition(async () => {
             const result = await deleteRichMenu(id);
             if (result.success) {
-                toast({ title: "Deleted", description: "Rich menu deleted." });
+                toast({ title: "ลบเรียบร้อย", description: "ลบริชเมนูเรียบร้อยแล้ว" });
             } else {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
+                toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
             }
         });
     };
@@ -44,7 +44,7 @@ export function RichMenuList({ richMenus, defaultRichMenuId }: RichMenuListProps
     if (!richMenus.length) {
         return (
             <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
-                No Rich Menus found. Create one to get started.
+                ไม่พบริชเมนู คลิกปุ่ม &quot;สร้างริชเมนู&quot; เพื่อเริ่มใช้งาน
             </div>
         );
     }
@@ -61,7 +61,7 @@ export function RichMenuList({ richMenus, defaultRichMenuId }: RichMenuListProps
                                     <CardTitle className="text-lg truncate">{menu.name}</CardTitle>
                                     <CardDescription>{menu.chatBarText}</CardDescription>
                                 </div>
-                                {isDefault && <Badge>Default</Badge>}
+                                {isDefault && <Badge>ค่าเริ่มต้น</Badge>}
                             </div>
                         </CardHeader>
                         <CardContent className="h-[200px] bg-muted/20 relative flex items-center justify-center overflow-hidden">
@@ -75,7 +75,7 @@ export function RichMenuList({ richMenus, defaultRichMenuId }: RichMenuListProps
                 */}
                             <div className="text-center text-muted-foreground text-sm p-4">
                                 <p>ID: {menu.richMenuId}</p>
-                                <p className="text-xs mt-2 opacity-50">Image preview not available via API</p>
+                                <p className="text-xs mt-2 opacity-50">ไม่สามารถดูตัวอย่างรูปภาพจาก API ได้</p>
                             </div>
                         </CardContent>
                         <CardFooter className="flex justify-between pt-4">
@@ -86,7 +86,7 @@ export function RichMenuList({ richMenus, defaultRichMenuId }: RichMenuListProps
                                 onClick={() => handleSetDefault(menu.richMenuId)}
                             >
                                 {isDefault ? <Check className="w-4 h-4 mr-1" /> : <Star className="w-4 h-4 mr-1" />}
-                                {isDefault ? "Active" : "Set Default"}
+                                {isDefault ? "ใช้อยู่" : "ตั้งเป็นเมนูหลัก"}
                             </Button>
 
                             <Button

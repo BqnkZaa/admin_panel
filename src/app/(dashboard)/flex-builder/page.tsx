@@ -7,8 +7,8 @@ export default async function FlexBuilderPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Flex Message Builder</h1>
-                <p className="text-muted-foreground">Manage and design your Flex Message templates.</p>
+                <h1 className="text-2xl md:text-3xl font-bold">ตัวสร้าง Flex Message</h1>
+                <p className="text-muted-foreground">ออกแบบและจัดการเทมเพลต Flex Message (JSON)</p>
             </div>
             <FlexBuilderClient initialTemplates={templates} />
         </div>

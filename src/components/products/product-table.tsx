@@ -36,13 +36,13 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-[80px]">Image</TableHead>
+                        <TableHead className="w-[80px]">รูปภาพ</TableHead>
                         <TableHead>SKU</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Stock</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                        <TableHead>ชื่อสินค้า</TableHead>
+                        <TableHead>ราคา</TableHead>
+                        <TableHead>สต็อก</TableHead>
+                        <TableHead>สถานะ</TableHead>
+                        <TableHead className="text-right">จัดการ</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -66,7 +66,7 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                             </TableCell>
                             <TableCell>
                                 <Badge variant={product.isActive ? "default" : "secondary"}>
-                                    {product.isActive ? "Active" : "Inactive"}
+                                    {product.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-right">
@@ -91,7 +91,7 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                     {products.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
-                                No products found. Add one to get started.
+                                ไม่พบสินค้า คลิกปุ่ม &quot;เพิ่มสินค้า&quot; เพื่อเริ่มใช้งาน
                             </TableCell>
                         </TableRow>
                     )}

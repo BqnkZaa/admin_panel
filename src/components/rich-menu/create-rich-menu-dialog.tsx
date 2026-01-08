@@ -35,9 +35,9 @@ import { Card } from "@/components/ui/card";
 // --- Types & Schemas ---
 
 const baseSchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    chatBarText: z.string().min(1, "Chat bar text is required"),
-    imageUrl: z.string().url("Must be a valid URL"),
+    name: z.string().min(1, "กรุณาระบุชื่อริชเมนู"),
+    chatBarText: z.string().min(1, "กรุณาระบุข้อความ Chat Bar"),
+    imageUrl: z.string().url("ลิงก์รูปภาพไม่ถูกต้อง"),
 });
 
 const actionSchema = z.object({
@@ -51,7 +51,7 @@ const actionSchema = z.object({
     if (data.type === 'uri' && !data.uri) return false;
     if (data.type === 'postback' && !data.data) return false;
     return true;
-}, { message: "Missing required field for selected action type" });
+}, { message: "ข้อมูลระบุไม่ครบถ้วนตามประเภท Action" });
 
 type ActionValues = z.infer<typeof actionSchema>;
 
@@ -105,13 +105,13 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
         // 1. Validate Basic Info first
         const isBasicInfoValid = await form.trigger();
         if (!isBasicInfoValid) {
-            toast({ title: "Validation Error", description: "Please check the Basic Information section.", variant: "destructive" });
+            toast({ title: "ข้อมูลไม่ครบถ้วน", description: "กรุณาตรวจสอบข้อมูลในส่วนที่ 1", variant: "destructive" });
             return;
         }
 
         // 2. Validate Template Selection
         if (!selectedTemplate) {
-            toast({ title: "Validation Error", description: "Please select a Rich Menu layout template.", variant: "destructive" });
+            toast({ title: "ข้อมูลไม่ครบถ้วน", description: "กรุณาเลือกรูปแบบริชเมนู (Template)", variant: "destructive" });
             return;
         }
 
@@ -128,7 +128,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
         // 4. Validate Actions (Optional: Strict check if we want to enforce ALL buttons or AT LEAST ONE)
         // Currently enforcing at least one
         if (areas.length === 0) {
-            toast({ title: "Validation Error", description: "Please configure at least one button in the visual editor.", variant: "destructive" });
+            toast({ title: "ข้อมูลไม่ครบถ้วน", description: "กรุณากำหนด Action อย่างน้อย 1 จุด", variant: "destructive" });
             return;
         }
 
@@ -144,7 +144,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
         startTransition(async () => {
             const result = await createRichMenu(finalPayload);
             if (result.success) {
-                toast({ title: "Success", description: "Rich Menu created successfully." });
+                toast({ title: "สำเร็จ", description: "สร้างริชเมนูเรียบร้อยแล้ว" });
                 onOpenChange(false);
                 resetDialog();
             } else {
@@ -169,9 +169,9 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
         }}>
             <DialogContent className="sm:max-w-[900px] h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
                 <DialogHeader className="p-6 pb-2 border-b">
-                    <DialogTitle>Create Rich Menu</DialogTitle>
+                    <DialogTitle>สร้างริชเมนู</DialogTitle>
                     <DialogDescription>
-                        Configure your rich menu layout and actions below.
+                        ตั้งค่ารูปแบบริชเมนูและการกระทำ (Actions)
                     </DialogDescription>
                 </DialogHeader>
 
@@ -179,7 +179,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                     {/* Section 1: Basic Info */}
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2">
-                            1. Basic Information
+                            1. ข้อมูลพื้นฐาน
                         </h3>
                         <Form {...form}>
                             <form className="space-y-4 p-4 border rounded-lg bg-slate-50/50">
@@ -188,7 +188,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Name (Internal)</FormLabel>
+                                            <FormLabel>ชื่อเรียก (ภายใน)</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Main Menu v1" {...field} />
                                             </FormControl>
@@ -201,9 +201,9 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                     name="chatBarText"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Chat Bar Text</FormLabel>
+                                            <FormLabel>ข้อความ Chat Bar</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="Tap to open menu" {...field} />
+                                                <Input placeholder="คลิกเพื่อเปิดเมนู" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -214,12 +214,12 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                     name="imageUrl"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Image URL (Public)</FormLabel>
+                                            <FormLabel>ลิงก์รูปภาพ (Public URL)</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="https://example.com/menu_bg.jpg" {...field} />
                                             </FormControl>
                                             <FormDescription>
-                                                Ensure image matches the template size (usually 2500x1686 or 2500x843).
+                                                รูปภาพต้องมีขนาดตรงกับ Template (ปกติ 2500x1686 หรือ 2500x843)
                                             </FormDescription>
                                             <FormMessage />
                                         </FormItem>
@@ -232,7 +232,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                     {/* Section 2: Template Selection */}
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2">
-                            2. Select Layout Template
+                            2. เลือกรูปแบบริชเมนู (Template)
                         </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {RICH_MENU_TEMPLATES.map((tpl) => (
@@ -271,8 +271,8 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                     {/* Section 3: Visual Editor */}
                     <div className={cn("space-y-4 transition-opacity", selectedTemplate ? "opacity-100" : "opacity-50 pointer-events-none grayscale")}>
                         <h3 className="text-lg font-semibold flex items-center gap-2">
-                            3. Configure Actions
-                            {!selectedTemplate && <span className="text-sm font-normal text-slate-500 ml-2">(Select a template first)</span>}
+                            3. ตั้งค่าการกระทำ (Actions)
+                            {!selectedTemplate && <span className="text-sm font-normal text-slate-500 ml-2">(กรุณาเลือก Template ก่อน)</span>}
                         </h3>
 
                         {selectedTemplate && (
@@ -291,7 +291,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                             />
                                         ) : (
                                             <div className="absolute inset-0 bg-slate-200 flex items-center justify-center text-slate-400">
-                                                No Image Preview
+                                                ไม่มีตัวอย่างรูปภาพ
                                             </div>
                                         )}
 
@@ -324,7 +324,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                                         </>
                                                     ) : (
                                                         <span className="bg-white/80 px-2 py-1 rounded text-black opacity-0 group-hover:opacity-100">
-                                                            Set Action {idx + 1}
+                                                            ตั้งค่าปุ่ม {idx + 1}
                                                         </span>
                                                     )}
                                                 </div>
@@ -355,7 +355,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                     ))}
                                     {Object.keys(configuredActions).length === 0 && (
                                         <p className="text-sm text-slate-500 italic col-span-3 text-center py-4">
-                                            Click on the areas in the image above to configure actions.
+                                            คลิกที่พื้นที่บนรูปภาพเพื่อกำหนดการกระทำ
                                         </p>
                                     )}
                                 </div>
@@ -366,11 +366,11 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
 
                 <DialogFooter className="p-6 pt-2 border-t bg-slate-50">
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-                        Cancel
+                        ยกเลิก
                     </Button>
                     <Button onClick={onSubmit} disabled={isPending}>
                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Create Rich Menu
+                        สร้างริชเมนู
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -382,7 +382,7 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                     onOpenChange={(val) => !val && setActiveAreaIndex(null)}
                     onSave={(action) => handleSaveAction(activeAreaIndex, action)}
                     initialValue={configuredActions[activeAreaIndex]}
-                    title={`Configure Action for Area ${activeAreaIndex + 1}`}
+                    title={`ตั้งค่าการกระทำสำหรับปุ่มที่ ${activeAreaIndex + 1}`}
                 />
             )}
         </Dialog>
@@ -426,17 +426,17 @@ function ActionConfigDialog({ open, onOpenChange, onSave, initialValue, title }:
                             name="type"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Action Type</FormLabel>
+                                    <FormLabel>ประเภทการกระทำ</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select action type" />
+                                                <SelectValue placeholder="เลือกประเภทการกระทำ" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="message">Message (Text)</SelectItem>
-                                            <SelectItem value="uri">Open Link (URI)</SelectItem>
-                                            <SelectItem value="postback">Postback (Data)</SelectItem>
+                                            <SelectItem value="message">ส่งข้อความ (Message)</SelectItem>
+                                            <SelectItem value="uri">เปิดลิงก์ (URI)</SelectItem>
+                                            <SelectItem value="postback">ส่งข้อมูลกลับ (Postback)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormItem>
@@ -449,7 +449,7 @@ function ActionConfigDialog({ open, onOpenChange, onSave, initialValue, title }:
                                 name="text"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Message Text</FormLabel>
+                                        <FormLabel>ข้อความที่จะส่ง</FormLabel>
                                         <FormControl>
                                             <Input placeholder="Hello World" {...field} />
                                         </FormControl>
@@ -492,7 +492,7 @@ function ActionConfigDialog({ open, onOpenChange, onSave, initialValue, title }:
                         )}
 
                         <DialogFooter>
-                            <Button type="submit">Save Action</Button>
+                            <Button type="submit">บันทึก</Button>
                         </DialogFooter>
                     </form>
                 </Form>

@@ -20,15 +20,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Chat", href: "/chat", icon: MessageSquare },
-    { name: "Broadcast", href: "/broadcast", icon: Send },
+    { name: "ภาพรวมระบบ", href: "/dashboard", icon: LayoutDashboard },
+    { name: "แชท", href: "/chat", icon: MessageSquare },
+    { name: "บรอดแคสต์", href: "/broadcast", icon: Send },
     { name: "Flex Builder", href: "/flex-builder", icon: Palette },
-    { name: "Customers", href: "/customers", icon: Users },
-    { name: "Rich Menu", href: "/rich-menu", icon: Grid3X3 },
-    { name: "Automation", href: "/automation", icon: Bot },
-    { name: "Products", href: "/products", icon: Package },
-    { name: "Settings", href: "/settings", icon: Settings },
+    { name: "ลูกค้า", href: "/customers", icon: Users },
+    { name: "ริชเมนู", href: "/rich-menu", icon: Grid3X3 },
+    { name: "ระบบอัตโนมัติ", href: "/automation", icon: Bot },
+    { name: "สินค้า", href: "/products", icon: Package },
+    { name: "ตั้งค่า", href: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {

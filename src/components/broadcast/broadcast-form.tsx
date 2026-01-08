@@ -211,13 +211,13 @@ export default function BroadcastForm() {
             });
 
             if (result.success) {
-                toast({ title: "Broadcast saved/queued!" });
+                toast({ title: "บันทึกข้อมูลเรียบร้อย!" });
                 // Reset form slightly
                 setTextMessage("");
                 setImageUrl("");
                 setBroadcastName("");
             } else {
-                toast({ title: "Failed", description: result.error, variant: "destructive" });
+                toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
             }
         });
     };
@@ -309,7 +309,7 @@ export default function BroadcastForm() {
                     {messageType === "image" && (
                         <div className="p-4 space-y-4">
                             <div className="space-y-2">
-                                <Label>Image URL (ต้องเป็น HTTPS)</Label>
+                                <Label>ลิงก์รูปภาพ (ต้องเป็น HTTPS)</Label>
                                 <Input
                                     placeholder="https://example.com/image.jpg"
                                     value={imageUrl}
@@ -340,7 +340,7 @@ export default function BroadcastForm() {
                                         const parsed = validateJson();
                                         if (parsed) setFlexJson(JSON.stringify(parsed, null, 2));
                                     }}>
-                                        Reformat
+                                        จัดรูปแบบใหม่
                                     </Button>
                                     <ProductPickerDialog onProductSelect={handleProductSelect} />
                                 </div>
@@ -412,7 +412,7 @@ export default function BroadcastForm() {
                                 active={targetType === "RICH_MENU"}
                                 onClick={() => setTargetType("RICH_MENU")}
                                 icon={<Users2 className="w-4 h-4" />}
-                                label="กลุ่ม"
+                                label="ริชเมนู"
                             />
                             <TargetOption
                                 active={targetType === "SPECIFIC_USERS"} // Using this for "Manual"
@@ -459,7 +459,7 @@ export default function BroadcastForm() {
                                 <Label>เลือก Rich Menu Group</Label>
                                 <Select value={selectedRichMenuAliasId} onValueChange={setSelectedRichMenuAliasId}>
                                     <SelectTrigger className="bg-slate-50">
-                                        <SelectValue placeholder="เลือก Rich Menu" />
+                                        <SelectValue placeholder="เลือกริชเมนู" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {richMenus.map(m => (
@@ -474,7 +474,7 @@ export default function BroadcastForm() {
 
                         {targetType === "SPECIFIC_USERS" && (
                             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
-                                <Label>Line User IDs (คั่นด้วยเครื่องหมายคอมม่า)</Label>
+                                <Label>Line User IDs (คั่นด้วยเครื่องหมายจุลภาค ,)</Label>
                                 <Textarea
                                     placeholder="U1234..., U5678..."
                                     value={specificUserIds}
@@ -503,7 +503,7 @@ export default function BroadcastForm() {
                             checked={isScheduled}
                             onCheckedChange={setIsScheduled}
                         />
-                        <Label htmlFor="schedule-mode" className="cursor-pointer text-slate-700">ตั้งเวลาส่ง (Schedule)</Label>
+                        <Label htmlFor="schedule-mode" className="cursor-pointer text-slate-700">ตั้งเวลาส่งล่วงหน้า</Label>
                     </div>
 
                     {isScheduled && (
@@ -555,7 +555,7 @@ export default function BroadcastForm() {
                             </>
                         ) : (
                             <>
-                                <Send className="mr-2 h-5 w-5" /> ส่ง Broadcast
+                                <Send className="mr-2 h-5 w-5" /> ส่งข้อความ
                             </>
                         )}
                     </Button>

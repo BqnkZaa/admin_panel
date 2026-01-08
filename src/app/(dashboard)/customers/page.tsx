@@ -25,8 +25,8 @@ export default async function CustomersPage({
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold">Customers (CRM)</h1>
-                    <p className="text-muted-foreground">Manage all LINE followers and users.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold">ลูกค้า (CRM)</h1>
+                    <p className="text-muted-foreground">จัดการผู้ติดตามและลูกค้าทั้งหมด</p>
                 </div>
             </div>
 
@@ -34,12 +34,12 @@ export default async function CustomersPage({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[80px]">Avatar</TableHead>
-                            <TableHead>Display Name</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Tags</TableHead>
-                            <TableHead>Last Active</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="w-[80px]">รูปโปรไฟล์</TableHead>
+                            <TableHead>ชื่อที่แสดง</TableHead>
+                            <TableHead>สถานะ</TableHead>
+                            <TableHead>แท็ก</TableHead>
+                            <TableHead>ใช้งานล่าสุด</TableHead>
+                            <TableHead className="text-right">จัดการ</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -63,13 +63,13 @@ export default async function CustomersPage({
                                     <div className="flex gap-2">
                                         {customer.isFollowing ? (
                                             <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                                                Following
+                                                ติดตามอยู่
                                             </Badge>
                                         ) : (
-                                            <Badge variant="secondary">Unfollowed</Badge>
+                                            <Badge variant="secondary">เลิกติดตาม</Badge>
                                         )}
                                         {customer.isBlocked && (
-                                            <Badge variant="destructive">Blocked</Badge>
+                                            <Badge variant="destructive">บล็อก</Badge>
                                         )}
                                     </div>
                                 </TableCell>
@@ -103,13 +103,13 @@ export default async function CustomersPage({
             {/* Pagination (Simple) */}
             <div className="flex items-center justify-end gap-2">
                 <Button variant="outline" size="sm" disabled={(currentPage || 1) <= 1} asChild>
-                    <Link href={`/customers?page=${(currentPage || 1) - 1}`}>Previous</Link>
+                    <Link href={`/customers?page=${(currentPage || 1) - 1}`}>ก่อนหน้า</Link>
                 </Button>
                 <span className="text-sm">
-                    Page {currentPage || 1} of {totalPages || 1}
+                    หน้า {currentPage || 1} จาก {totalPages || 1}
                 </span>
                 <Button variant="outline" size="sm" disabled={(currentPage || 1) >= (totalPages || 1)} asChild>
-                    <Link href={`/customers?page=${(currentPage || 1) + 1}`}>Next</Link>
+                    <Link href={`/customers?page=${(currentPage || 1) + 1}`}>ถัดไป</Link>
                 </Button>
             </div>
         </div>

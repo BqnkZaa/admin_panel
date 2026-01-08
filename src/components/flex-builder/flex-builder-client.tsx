@@ -57,23 +57,23 @@ export function FlexBuilderClient({ initialTemplates }: { initialTemplates: Temp
                 });
 
                 if (res.success) {
-                    toast({ title: "Template saved" });
+                    toast({ title: "บันทึกเทมเพลตเรียบร้อย" });
                     setIsDialogOpen(false);
                     // Refresh data would normally happen via revalidatePath, but client state might need manual update if not full reload.
                     // Since server action revalidates path, router 'refresh' is needed or just rely on Next.js cache revalidation.
                     // For now, let's reload or trust revalidate.
                     window.location.reload();
                 } else {
-                    toast({ title: "Error", description: res.error, variant: "destructive" });
+                    toast({ title: "เกิดข้อผิดพลาด", description: res.error, variant: "destructive" });
                 }
             });
         } catch (e) {
-            toast({ title: "Invalid JSON", description: (e as Error).message, variant: "destructive" });
+            toast({ title: "JSON ไม่ถูกต้อง", description: (e as Error).message, variant: "destructive" });
         }
     };
 
     const handleDelete = (id: string) => {
-        if (!confirm("Are you sure?")) return;
+        if (!confirm("คุณแน่ใจหรือไม่?")) return;
         startTransition(async () => {
             await deleteTemplate(id);
             window.location.reload();
@@ -86,7 +86,7 @@ export function FlexBuilderClient({ initialTemplates }: { initialTemplates: Temp
                 {/* Create New Card */}
                 <Card className="flex flex-col items-center justify-center h-[200px] border-dashed cursor-pointer hover:border-primary hover:bg-accent/50 transition-colors" onClick={() => openEditor()}>
                     <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="font-medium text-muted-foreground">Create New Template</p>
+                    <p className="font-medium text-muted-foreground">สร้างเทมเพลตใหม่</p>
                 </Card>
 
                 {/* Templates List */}
@@ -117,19 +117,19 @@ export function FlexBuilderClient({ initialTemplates }: { initialTemplates: Temp
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-[800px] h-[90vh] flex flex-col">
                     <DialogHeader>
-                        <DialogTitle>{editingId ? "Edit Template" : "Create Template"}</DialogTitle>
-                        <DialogDescription>Design your Flex Message bubble.</DialogDescription>
+                        <DialogTitle>{editingId ? "แก้ไขเทมเพลต" : "สร้างเทมเพลต"}</DialogTitle>
+                        <DialogDescription>ออกแบบ Flex Message ของคุณ</DialogDescription>
                     </DialogHeader>
 
                     <div className="grid gap-4 py-4 flex-1">
                         <div className="space-y-2">
-                            <Label>Template Name</Label>
-                            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Promotion Card" />
+                            <Label>ชื่อเทมเพลต</Label>
+                            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น การ์ดโปรโมชั่น" />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
                             <div className="flex flex-col gap-2 h-full">
-                                <Label className="flex items-center gap-1"><Code className="h-4 w-4" /> JSON Code</Label>
+                                <Label className="flex items-center gap-1"><Code className="h-4 w-4" /> โค้ด JSON</Label>
                                 <Textarea
                                     className="flex-1 font-mono text-xs resize-none"
                                     value={jsonContent}
@@ -137,12 +137,12 @@ export function FlexBuilderClient({ initialTemplates }: { initialTemplates: Temp
                                 />
                             </div>
                             <div className="flex flex-col gap-2 h-full">
-                                <Label className="flex items-center gap-1"><Eye className="h-4 w-4" /> Preview (Mock)</Label>
+                                <Label className="flex items-center gap-1"><Eye className="h-4 w-4" /> ตัวอย่าง (จำลอง)</Label>
                                 <div className="flex-1 border rounded-md bg-slate-100 flex items-center justify-center text-muted-foreground text-center p-4">
                                     <div className="space-y-2">
-                                        <p>Live Preview is complex to implement fully client-side without LINE Simulator.</p>
-                                        <p className="text-xs">Use &quot;Send Test&quot; in Broadcast to verify actual rendering.</p>
-                                        <Badge variant="outline">Preview Placeholder</Badge>
+                                        <p>การแสดงผลจริงอาจแตกต่างจากตัวอย่าง</p>
+                                        <p className="text-xs">ควรทดสอบด้วยฟังก์ชัน &quot;ส่งข้อความ&quot; เพื่อดูผลลัพธ์จริง</p>
+                                        <Badge variant="outline">ตัวอย่างเบื้องต้น</Badge>
                                     </div>
                                 </div>
                             </div>
@@ -150,8 +150,8 @@ export function FlexBuilderClient({ initialTemplates }: { initialTemplates: Temp
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleSave} disabled={isPending}>Save Template</Button>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>ยกเลิก</Button>
+                        <Button onClick={handleSave} disabled={isPending}>บันทึกเทมเพลต</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

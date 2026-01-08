@@ -28,12 +28,12 @@ import { Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const productSchema = z.object({
-    sku: z.string().min(1, "SKU is required"),
-    name: z.string().min(1, "Name is required"),
+    sku: z.string().min(1, "กรุณาระบุ SKU"),
+    name: z.string().min(1, "กรุณาระบุชื่อสินค้า"),
     description: z.string().optional(),
-    price: z.coerce.number().min(0, "Price must be positive"),
-    stock: z.coerce.number().int().min(0, "Stock must be positive"),
-    imageUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+    price: z.coerce.number().min(0, "ราคาต้องมากกว่า 0"),
+    stock: z.coerce.number().int().min(0, "จำนวนสินค้าต้องมากกว่า 0"),
+    imageUrl: z.string().url("ลิงก์ไม่ถูกต้อง").optional().or(z.literal("")),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -92,8 +92,8 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
 
             if (result.success) {
                 toast({
-                    title: "Success",
-                    description: `Product ${product ? "updated" : "created"} successfully.`,
+                    title: "สำเร็จ",
+                    description: `บันทึกข้อมูลสินค้าเรียบร้อย`,
                 });
                 onOpenChange(false);
                 form.reset();
@@ -111,11 +111,11 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>{product ? "Edit Product" : "Add Product"}</DialogTitle>
+                    <DialogTitle>{product ? "แก้ไขสินค้า" : "เพิ่มสินค้า"}</DialogTitle>
                     <DialogDescription>
                         {product
-                            ? "Make changes to the product here."
-                            : "Add a new product to your catalog."}
+                            ? "แก้ไขข้อมูลสินค้าที่นี่"
+                            : "เพิ่มสินค้าใหม่ในรายการของคุณ"}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -138,7 +138,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>ชื่อสินค้า</FormLabel>
                                     <FormControl>
                                         <Input placeholder="Product Name" {...field} value={field.value as string} />
                                     </FormControl>
@@ -165,7 +165,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                                 name="stock"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Stock</FormLabel>
+                                        <FormLabel>จำนวนในสต็อก</FormLabel>
                                         <FormControl>
                                             <Input type="number" {...field} value={field.value as number} />
                                         </FormControl>
@@ -180,7 +180,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                             name="imageUrl"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Image URL</FormLabel>
+                                    <FormLabel>ลิงก์รูปภาพ</FormLabel>
                                     <FormControl>
                                         <Input placeholder="https://example.com/image.jpg" {...field} value={field.value as string} />
                                     </FormControl>
@@ -193,7 +193,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>รายละเอียด</FormLabel>
                                     <FormControl>
                                         <Textarea placeholder="Product description..." {...field} value={field.value as string} />
                                     </FormControl>
@@ -204,7 +204,7 @@ export function ProductDialog({ open, onOpenChange, product }: ProductDialogProp
                         <DialogFooter>
                             <Button type="submit" disabled={isPending}>
                                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Changes
+                                บันทึกการเปลี่ยนแปลง
                             </Button>
                         </DialogFooter>
                     </form>

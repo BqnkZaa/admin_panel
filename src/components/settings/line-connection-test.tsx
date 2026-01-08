@@ -23,11 +23,11 @@ export function LineConnectionTest() {
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                    Click to verify Channel Access Token and retrieve Bot info.
+                    คลิกเพื่อตรวจสอบ Channel Access Token และดึงข้อมูล Bot
                 </p>
                 <Button onClick={handleTest} disabled={isPending} size="sm">
                     {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wifi className="w-4 h-4 mr-2" />}
-                    Test Connection
+                    ทดสอบการเชื่อมต่อ
                 </Button>
             </div>
 
@@ -48,7 +48,7 @@ export function LineConnectionTest() {
 
             {result?.success === false && (
                 <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
-                    <AlertTitle>Connection Failed</AlertTitle>
+                    <AlertTitle>การเชื่อมต่อล้มเหลว</AlertTitle>
                     <AlertDescription>{result.error}</AlertDescription>
                 </Alert>
             )}

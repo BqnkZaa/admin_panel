@@ -43,7 +43,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleTemplateSelect = (template: { name: string; content: any }) => {
         setFlexContent(JSON.stringify(template.content, null, 2));
-        toast({ title: "Template Loaded", description: `Loaded "${template.name}"` });
+        toast({ title: "โหลดเทมเพลตสำเร็จ", description: `โหลด "${template.name}" เรียบร้อย` });
     };
 
     const handleSave = () => {
@@ -51,19 +51,19 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
 
         if (messageType === "TEXT") {
             if (!textContent.trim()) {
-                toast({ title: "Error", description: "Text message cannot be empty", variant: "destructive" });
+                toast({ title: "เกิดข้อผิดพลาด", description: "กรุณาระบุข้อความ", variant: "destructive" });
                 return;
             }
             finalContent = { type: "text", text: textContent };
         } else {
             if (!altText.trim()) {
-                toast({ title: "Error", description: "Alt Text is required for Flex messages", variant: "destructive" });
+                toast({ title: "เกิดข้อผิดพลาด", description: "กรุณาระบุ Alt Text", variant: "destructive" });
                 return;
             }
             try {
                 finalContent = JSON.parse(flexContent);
             } catch {
-                toast({ title: "Error", description: "Invalid JSON format in Flex Message", variant: "destructive" });
+                toast({ title: "เกิดข้อผิดพลาด", description: "รูปแบบ JSON ไม่ถูกต้อง", variant: "destructive" });
                 return;
             }
         }
@@ -77,9 +77,9 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
             });
 
             if (result.success) {
-                toast({ title: "Settings saved", description: "Welcome message updated." });
+                toast({ title: "บันทึกข้อมูลเรียบร้อย", description: "อัปเดตข้อความต้อนรับแล้ว" });
             } else {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
+                toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
             }
         });
     };
@@ -89,7 +89,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle>Welcome Message</CardTitle>
+                        <CardTitle>ข้อความต้อนรับ (Welcome Message)</CardTitle>
                         <CardDescription>
                             ข้อความที่จะส่งหาลูกค้าอัตโนมัติเมื่อกดติดตาม (Follow)
                         </CardDescription>
@@ -108,7 +108,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
 
                 {/* Message Type Selection */}
                 <div className="space-y-3">
-                    <Label className="text-base">Message Type</Label>
+                    <Label className="text-base">ประเภทข้อความ</Label>
                     <RadioGroup
                         value={messageType}
                         onValueChange={(val: string) => setMessageType(val as "TEXT" | "FLEX")}
@@ -121,7 +121,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
                                 className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                             >
                                 <MessageSquareText className="mb-2 h-6 w-6" />
-                                <span className="font-semibold">Text Message</span>
+                                <span className="font-semibold">ข้อความ (Text)</span>
                             </Label>
                         </div>
                         <div>
@@ -141,7 +141,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
                 <div className="p-4 border rounded-md bg-slate-50 dark:bg-slate-900/50">
                     {messageType === "TEXT" ? (
                         <div className="space-y-2">
-                            <Label>Message Text</Label>
+                            <Label>ข้อความ</Label>
                             <Textarea
                                 value={textContent}
                                 onChange={(e) => setTextContent(e.target.value)}
@@ -153,11 +153,11 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
                     ) : (
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Alt Text (Notification Text)</Label>
+                                <Label>Alt Text (ข้อความแจ้งเตือน)</Label>
                                 <Input
                                     value={altText}
                                     onChange={(e) => setAltText(e.target.value)}
-                                    placeholder="e.g. You have a new message!"
+                                    placeholder="เช่น ท่านได้รับข้อความใหม่"
                                 />
                                 <p className="text-xs text-muted-foreground">ข้อความที่จะแสดงใน Notification เมื่อลูกค้าได้รับ Flex Message</p>
                             </div>
@@ -172,7 +172,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
                                         className="h-8"
                                     >
                                         <LayoutTemplate className="mr-2 h-3.5 w-3.5" />
-                                        Load Template
+                                        โหลดเทมเพลต
                                     </Button>
                                 </div>
                                 <Textarea
@@ -191,7 +191,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
             <CardFooter>
                 <Button onClick={handleSave} disabled={isPending || !isActive}>
                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save Changes
+                    บันทึกการเปลี่ยนแปลง
                 </Button>
             </CardFooter>
 

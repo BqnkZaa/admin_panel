@@ -84,7 +84,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
     const addQuickReply = () => {
         if (!newQrLabel || !newQrValue) return;
         if (quickReplies.length >= 13) {
-            toast({ title: "Max 13 quick replies allowed", variant: "destructive" });
+            toast({ title: "สร้าง Quick Replies ได้สูงสุด 13 รายการ", variant: "destructive" });
             return;
         }
         setQuickReplies([...quickReplies, { label: newQrLabel, type: newQrType, value: newQrValue }]);
@@ -113,7 +113,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
 
     const handleCreate = () => {
         if (!keyword || !replyContent) {
-            toast({ title: "Keyword and Reply Content are required", variant: "destructive" });
+            toast({ title: "กรุณาระบุ Keyword และข้อความตอบกลับ", variant: "destructive" });
             return;
         }
 
@@ -123,7 +123,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                 parsedContent = JSON.parse(replyContent); // Ensure valid JSON
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (e) {
-                toast({ title: "Invalid JSON for Flex Message", variant: "destructive" });
+                toast({ title: "รูปแบบ JSON ไม่ถูกต้อง", variant: "destructive" });
                 return;
             }
         }
@@ -153,7 +153,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
             });
 
             if (result.success) {
-                toast({ title: "Rule created successfully" });
+                toast({ title: "สร้างกฎเรียบร้อยแล้ว" });
                 setIsDialogOpen(false);
                 resetForm();
             } else {
@@ -163,11 +163,11 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
     };
 
     const handleDelete = (id: string) => {
-        if (!confirm("Are you sure you want to delete this rule?")) return;
+        if (!confirm("คุณแน่ใจว่าต้องการลบกฎนี้?")) return;
         startTransition(async () => {
             const result = await deleteKeyword(id);
             if (result.success) {
-                toast({ title: "Rule deleted" });
+                toast({ title: "ลบกฎเรียบร้อยแล้ว" });
             } else {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             }
@@ -186,57 +186,57 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                 <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
                     <DialogTrigger asChild>
                         <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Automation Rule
+                            <Plus className="mr-2 h-4 w-4" /> เพิ่มกฎการตอบกลับ
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>Create Automation Rule</DialogTitle>
+                            <DialogTitle>สร้างกฎการตอบกลับ</DialogTitle>
                             <DialogDescription>
-                                Configure triggers, responses, and actions.
+                                ตั้งค่าคีย์เวิร์ด การตอบกลับ และการกระทำ (Actions)
                             </DialogDescription>
                         </DialogHeader>
 
                         <Tabs defaultValue="trigger" className="w-full">
                             <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="trigger">1. Trigger & Match</TabsTrigger>
-                                <TabsTrigger value="response">2. Response</TabsTrigger>
-                                <TabsTrigger value="actions">3. Actions</TabsTrigger>
+                                <TabsTrigger value="trigger">1. เงื่อนไข (Trigger)</TabsTrigger>
+                                <TabsTrigger value="response">2. การตอบกลับ</TabsTrigger>
+                                <TabsTrigger value="actions">3. การกระทำ (Actions)</TabsTrigger>
                             </TabsList>
 
                             {/* === TAB 1: TRIGGER === */}
                             <TabsContent value="trigger" className="space-y-4 py-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>Keyword or Pattern</Label>
+                                        <Label>คีย์เวิร์ด หรือ รูปแบบ (Pattern)</Label>
                                         <Input
                                             value={keyword}
                                             onChange={(e) => setKeyword(e.target.value)}
-                                            placeholder={matchType === "REGEX" ? "^hello.*" : "e.g. price"}
+                                            placeholder={matchType === "REGEX" ? "^สวัสดี.*" : "เช่น ราคา"}
                                         />
                                         {matchType === "REGEX" && (
-                                            <p className="text-xs text-muted-foreground">Supports valid JavaScript RegExp.</p>
+                                            <p className="text-xs text-muted-foreground">รองรับ JavaScript RegExp</p>
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Match Type</Label>
+                                        <Label>ประเภทการจับคู่</Label>
                                         <Select value={matchType} onValueChange={(val: "EXACT" | "REGEX") => setMatchType(val)}>
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="EXACT">Exact Match</SelectItem>
+                                                <SelectItem value="EXACT">ตรงกันทุกตัวอักษร (Exact)</SelectItem>
                                                 <SelectItem value="REGEX">Regular Expression</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Description <span className="text-xs text-muted-foreground">(Internal Note)</span></Label>
+                                    <Label>คำอธิบาย <span className="text-xs text-muted-foreground">(สำหรับแอดมิน)</span></Label>
                                     <Input
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
-                                        placeholder="e.g. Greeting rule for new customers"
+                                        placeholder="เช่น กฏสำหรับทักทายลูกค้าใหม่"
                                     />
                                 </div>
                             </TabsContent>
@@ -245,15 +245,15 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                             <TabsContent value="response" className="space-y-6 py-4">
                                 {/* Reply Settings */}
                                 <div className="space-y-4 border p-4 rounded-md">
-                                    <h4 className="font-semibold text-sm">Message Content</h4>
+                                    <h4 className="font-semibold text-sm">เนื้อหาข้อความ</h4>
                                     <div className="space-y-2">
-                                        <Label>Reply Type</Label>
+                                        <Label>ประเภทการตอบกลับ</Label>
                                         <Select value={replyType} onValueChange={(val: "TEXT" | "FLEX") => setReplyType(val)}>
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="TEXT">Text Message</SelectItem>
+                                                <SelectItem value="TEXT">ข้อความ (Text)</SelectItem>
                                                 <SelectItem value="FLEX">Flex Message (JSON)</SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -261,11 +261,11 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
 
                                     {replyType === "TEXT" ? (
                                         <div className="space-y-2">
-                                            <Label>Message Text</Label>
+                                            <Label>ข้อความ</Label>
                                             <Textarea
                                                 value={replyContent}
                                                 onChange={(e) => setReplyContent(e.target.value)}
-                                                placeholder="Enter your reply message..."
+                                                placeholder="พิมพ์ข้อความที่ต้องการตอบกลับ..."
                                                 rows={4}
                                             />
                                         </div>
@@ -276,7 +276,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                                                 <Input
                                                     value={altText}
                                                     onChange={(e) => setAltText(e.target.value)}
-                                                    placeholder="Displayed in chat list"
+                                                    placeholder="แสดงในรายการแชท"
                                                 />
                                             </div>
                                             <div className="space-y-2">
@@ -295,18 +295,18 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
 
                                 {/* Custom Sender */}
                                 <div className="space-y-4 border p-4 rounded-md">
-                                    <h4 className="font-semibold text-sm">Custom Sender (Optional)</h4>
+                                    <h4 className="font-semibold text-sm">ผู้ส่งแบบกำหนดเอง (Optional)</h4>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label>Sender Name</Label>
+                                            <Label>ชื่อผู้ส่ง</Label>
                                             <Input
                                                 value={senderName}
                                                 onChange={(e) => setSenderName(e.target.value)}
-                                                placeholder="Override Bot Name"
+                                                placeholder="ระบุเพื่อเปลี่ยนชื่อผู้ส่ง"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>Icon URL</Label>
+                                            <Label>ลิงก์รูปไอคอน</Label>
                                             <Input
                                                 value={senderIconUrl}
                                                 onChange={(e) => setSenderIconUrl(e.target.value)}
@@ -324,24 +324,24 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
 
                                     <div className="flex gap-2 items-end">
                                         <div className="space-y-1 flex-1">
-                                            <Label className="text-xs">Label</Label>
-                                            <Input value={newQrLabel} onChange={e => setNewQrLabel(e.target.value)} placeholder="Yes, sure!" />
+                                            <Label className="text-xs">ป้าย (Label)</Label>
+                                            <Input value={newQrLabel} onChange={e => setNewQrLabel(e.target.value)} placeholder="เช่น ได้เลย!" />
                                         </div>
                                         <div className="space-y-1 w-[120px]">
-                                            <Label className="text-xs">Type</Label>
+                                            <Label className="text-xs">ประเภท</Label>
                                             <Select value={newQrType} onValueChange={(val: "message" | "uri" | "postback") => setNewQrType(val)}>
                                                 <SelectTrigger>
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="message">Message</SelectItem>
-                                                    <SelectItem value="uri">Link</SelectItem>
+                                                    <SelectItem value="message">ข้อความ (Message)</SelectItem>
+                                                    <SelectItem value="uri">ลิงก์ (Link)</SelectItem>
                                                     <SelectItem value="postback">Postback</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                         <div className="space-y-1 flex-1">
-                                            <Label className="text-xs">Value (Text/URL/Data)</Label>
+                                            <Label className="text-xs">ค่า (Text/URL/Data)</Label>
                                             <Input value={newQrValue} onChange={e => setNewQrValue(e.target.value)} placeholder="Action value" />
                                         </div>
                                         <Button size="icon" onClick={addQuickReply}><Plus className="h-4 w-4" /></Button>
@@ -365,24 +365,24 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                             {/* === TAB 3: ACTIONS === */}
                             <TabsContent value="actions" className="space-y-4 py-4">
                                 <div className="space-y-2">
-                                    <Label>Add Tags to Customer</Label>
+                                    <Label>เพิ่มแท็กให้ลูกค้า</Label>
                                     <Input
                                         value={tagsToAdd}
                                         onChange={(e) => setTagsToAdd(e.target.value)}
-                                        placeholder="e.g. VIP, Interested, Q1-Lead (Comma separated)"
+                                        placeholder="เช่น VIP, สนใจสินค้า (คั่นด้วยจุลภาค)"
                                     />
                                     <p className="text-xs text-muted-foreground">
-                                        These tags will be automatically applied to any customer who triggers this rule.
+                                        แท็กเหล่านี้จะถูกเพิ่มให้อัตโนมัติเมื่อลูกค้าพิมพ์ตรงตามเงื่อนไข
                                     </p>
                                 </div>
                             </TabsContent>
                         </Tabs>
 
                         <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>ยกเลิก</Button>
                             <Button onClick={handleCreate} disabled={isPending || !keyword}>
                                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Create Rule
+                                สร้างกฎ
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -393,12 +393,12 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Keyword</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Reply</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>คีย์เวิร์ด</TableHead>
+                            <TableHead>ประเภท</TableHead>
+                            <TableHead>คำอธิบาย</TableHead>
+                            <TableHead>ตอบกลับ</TableHead>
+                            <TableHead>สถานะ</TableHead>
+                            <TableHead className="text-right">จัดการ</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -442,7 +442,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                         {keywords.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                    No rules found. Click &quot;Add Automation Rule&quot; to create one.
+                                    ไม่พบกฎการตอบกลับ คลิกปุ่ม &quot;เพิ่มกฎการตอบกลับ&quot; เพื่อเริ่มใช้งาน
                                 </TableCell>
                             </TableRow>
                         )}

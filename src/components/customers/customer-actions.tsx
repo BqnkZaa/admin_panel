@@ -31,11 +31,11 @@ export function CustomerActions({ customer }: CustomerActionsProps) {
             const res = await toggleBlockStatus(customer.id);
             if (res.success) {
                 toast({
-                    title: res.isBlocked ? "Customer Blocked" : "Customer Unblocked",
+                    title: res.isBlocked ? "บล็อกลูกค้าแล้ว" : "ปลดบล็อกลูกค้าแล้ว",
                     variant: res.isBlocked ? "destructive" : "default"
                 });
             } else {
-                toast({ title: "Error", description: res.error, variant: "destructive" });
+                toast({ title: "เกิดข้อผิดพลาด", description: res.error, variant: "destructive" });
             }
         });
     };
@@ -49,21 +49,21 @@ export function CustomerActions({ customer }: CustomerActionsProps) {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuLabel>การจัดการ</DropdownMenuLabel>
                 <DropdownMenuItem asChild>
                     <Link href={`/chat/${customer.id}`}>
-                        <MessageSquare className="mr-2 h-4 w-4" /> View Chat
+                        <MessageSquare className="mr-2 h-4 w-4" /> ดูแชท
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleToggleBlock} disabled={isPending} className={customer.isBlocked ? "text-green-600" : "text-red-600"}>
                     {customer.isBlocked ? (
                         <>
-                            <Shield className="mr-2 h-4 w-4" /> Unblock User
+                            <Shield className="mr-2 h-4 w-4" /> ปลดบล็อก
                         </>
                     ) : (
                         <>
-                            <ShieldAlert className="mr-2 h-4 w-4" /> Block User
+                            <ShieldAlert className="mr-2 h-4 w-4" /> บล็อก
                         </>
                     )}
                 </DropdownMenuItem>

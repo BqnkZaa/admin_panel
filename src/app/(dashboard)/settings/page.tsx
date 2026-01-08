@@ -14,8 +14,8 @@ export default async function SettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
-                <p className="text-muted-foreground">System status and preferences.</p>
+                <h1 className="text-2xl md:text-3xl font-bold">ตั้งค่า</h1>
+                <p className="text-muted-foreground">สถานะระบบและการตั้งค่าทั่วไป</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -23,23 +23,23 @@ export default async function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Server className="w-5 h-5" /> System Status
+                            <Server className="w-5 h-5" /> สถานะระบบ
                         </CardTitle>
-                        <CardDescription>Current health of the application services.</CardDescription>
+                        <CardDescription>สถานะการทำงานของบริการต่างๆ</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between p-3 border rounded-lg">
                             <div className="flex items-center gap-3">
                                 <Database className="w-5 h-5 text-muted-foreground" />
                                 <div>
-                                    <p className="font-medium">Database (PostgreSQL)</p>
-                                    <p className="text-xs text-muted-foreground">Core data storage</p>
+                                    <p className="font-medium">ฐานข้อมูล (PostgreSQL)</p>
+                                    <p className="text-xs text-muted-foreground">พื้นที่จัดเก็บข้อมูลหลัก</p>
                                 </div>
                             </div>
                             {health.database ? (
-                                <Badge variant="default" className="bg-green-600 hover:bg-green-700">Connected</Badge>
+                                <Badge variant="default" className="bg-green-600 hover:bg-green-700">เชื่อมต่อแล้ว</Badge>
                             ) : (
-                                <Badge variant="destructive">Disconnected</Badge>
+                                <Badge variant="destructive">ไม่ได้เชื่อมต่อ</Badge>
                             )}
                         </div>
                         {/* 
@@ -61,9 +61,9 @@ export default async function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <MessageCircle className="w-5 h-5" /> LINE API Connection
+                            <MessageCircle className="w-5 h-5" /> การเชื่อมต่อ LINE API
                         </CardTitle>
-                        <CardDescription>Verify your Messaging API configuration.</CardDescription>
+                        <CardDescription>ตรวจสอบการตั้งค่า Messaging API</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <LineConnectionTest />
@@ -73,16 +73,16 @@ export default async function SettingsPage() {
                 {/* Admin Profile */}
                 <Card className="md:col-span-2">
                     <CardHeader>
-                        <CardTitle>Admin Profile</CardTitle>
-                        <CardDescription>Your current login information.</CardDescription>
+                        <CardTitle>ข้อมูลผู้ดูแลระบบ</CardTitle>
+                        <CardDescription>ข้อมูลการเข้าสู่ระบบของคุณ</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-2">
-                            <Label>Email</Label>
+                            <Label>อีเมล</Label>
                             <Input disabled value={session?.user?.email || "Unknown"} />
                         </div>
                         <div className="grid gap-2">
-                            <Label>Role</Label>
+                            <Label>บทบาท</Label>
                             <Input disabled value={session?.user?.role || "ADMIN"} />
                         </div>
                     </CardContent>

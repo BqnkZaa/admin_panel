@@ -50,7 +50,7 @@ export function ProductClient({ initialProducts }: ProductClientProps) {
         if (!deleteId) return;
         const result = await deleteProduct(deleteId);
         if (result.success) {
-            toast({ title: "Product deleted" });
+            toast({ title: "ลบสินค้าเรียบร้อย" });
         } else {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         }
@@ -60,9 +60,9 @@ export function ProductClient({ initialProducts }: ProductClientProps) {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold tracking-tight">Products</h2>
+                <h2 className="text-3xl font-bold tracking-tight">สินค้า</h2>
                 <Button onClick={handleAdd}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Product
+                    <Plus className="mr-2 h-4 w-4" /> เพิ่มสินค้า
                 </Button>
             </div>
 
@@ -81,15 +81,15 @@ export function ProductClient({ initialProducts }: ProductClientProps) {
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogTitle>คุณแน่ใจหรือไม่?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the product.
+                            การกระทำนี้ไม่สามารถย้อนกลับได้ ข้อมูลสินค้าจะถูกลบถาวร
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
                         <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-                            Delete
+                            ลบ
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
