@@ -47,6 +47,7 @@ const worker = new Worker(
                         },
                     });
                     return { sentCount: 0, failedCount: 0 };
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } catch (err: any) {
                     console.error(`[Job ${job.id}] Broadcast API failed:`, err);
                     await prisma.broadcast.update({
