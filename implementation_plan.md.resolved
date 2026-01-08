@@ -1,56 +1,36 @@
-# Enabling All Broadcast Targeting Options
+# Rich Menu Visual Builder Upgrade
 
-The goal is to enable all targeting options shown in the "Pro" design reference ("เพื่อนทั้งหมด", "จำกัดจำนวน", "Segment", "คนเดียว") which were previously disabled. This involves updating the database schema, UI, server actions, and the background worker.
-
-## User Review Required
-> [!WARNING]
-> This requires a database migration to add new values to the `BroadcastTarget` enum. 
-> `ALL_FRIENDS` targets everyone via LINE Broadcast API (bypassing DB). 
-> `SEGMENT` will be implemented with basic "Active Users" logic for now.
+## Goal Description
+Replace the manual JSON input for Rich Menu areas with a visual, interactive builder. Users will select a template grid and click on areas to configure actions (Message, Link, Postback).
 
 ## Proposed Changes
 
-### Database Schema
-#### [MODIFY] [schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma)
-- Update `BroadcastTarget` enum:
-    - Add `ALL_FRIENDS` (Broadcast API)
-    - Add `LIMIT` (First N users)
-    - Add `SEGMENT` (Logic-based groups)
-    - Add `SINGLE` (Single user)
+### Library
+#### [NEW] [rich-menu-templates.ts](file:///d:/Workshop/line_oa/admin_panel/src/lib/rich-menu-templates.ts)
+- Define standard templates with their grid coordinates:
+    - `GRID_6_LARGE` (2x3)
+    - `GRID_4_LARGE` (2x2)
+    - `GRID_3_COMPACT` (1x3)
+    - Etc.
 
-### UI Components
-#### [MODIFY] [broadcast-form.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx)
-- Enable all [TargetOption](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#578-604) buttons.
-- specific inputs for each new target type:
-    - **LIMIT**: Input for number (e.g., 100).
-    - **SEGMENT**: Dropdown for segments (e.g., "Active Users (7 days)", "New Users (30 days)").
-    - **SINGLE**: Input for User ID.
-    - **ALL_FRIENDS**: Info text explaining it uses LINE Broadcast API.
-- Update validation logic.
-
-### Server Actions
-#### [MODIFY] [broadcast.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts)
-- Update [calculateRecipientCount](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-38):
-    - `ALL_FRIENDS`: Return 0 or "Unknown" (since we don't know total followers without Insight API, might just say "All Followers").
-    - `LIMIT`: Return the limit number.
-    - `SEGMENT`: Query count based on segment logic.
-    - `SINGLE`: Return 1.
-- Update [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#39-97):
-    - Handle new types and pass config to [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#120-136) creation.
-
-### Background Worker
-#### [MODIFY] [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
-- Update `processBroadcast`:
-    - `ALL_FRIENDS`: Use `client.broadcast(messages)`.
-    - `LIMIT`: Fetch `take: n` customers.
-    - `SEGMENT`: logic for filtering (e.g. `updatedAt` > 7 days ago).
-    - `SINGLE`: Send to 1 ID.
+### Components
+#### [MODIFY] [create-rich-menu-dialog.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/rich-menu/create-rich-menu-dialog.tsx)
+- Refactor into a multi-step wizard:
+    1.  **Basic Info**: Name, ChatBar Text, Image URL.
+    2.  **Template Selection**: Visual cards to pick a grid layout.
+    3.  **Editor**:
+        -   Preview of the uploaded image.
+        -   Overlay grid based on selected template.
+        -   Clicking a grid cell opens the **Action Dialog**.
+- Remove the direct JSON text area.
+- Auto-generate the JSON `areas` array upon submission based on the visual configuration.
 
 ## Verification Plan
-### Automated Tests
-- Build verification.
-
 ### Manual Verification
-- Test creating broadcasts with each new target type.
-- Verify "Recipient Count" updates correctly for each.
-- Verify behavior in [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts) by logging (or running actual broadcast if safe/test env).
+1.  Open "Create Rich Menu" dialog.
+2.  Enter basic info and valid image URL (2500x1686).
+3.  Select a "Large 6-button" template.
+4.  Click "Button 1" area -> Configure as "Message" -> "Test Message".
+5.  Click "Button 2" area -> Configure as "Link" -> "https://google.com".
+6.  Submit.
+7.  Check network request or resulting database entry to ensure `areas` JSON is correctly formed with proper bounds and action objects.

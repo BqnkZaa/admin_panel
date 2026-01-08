@@ -29,6 +29,7 @@ export async function createRichMenu(data: {
     chatBarText: string;
     imageUrl: string;
     areas: string; // JSON string
+    size?: { width: number; height: number }; // Optional, defaults to Large
 }) {
     const session = await auth();
     if (!session?.user) return { success: false, error: "Unauthorized" };
@@ -46,7 +47,7 @@ export async function createRichMenu(data: {
 
         // 2. Create Rich Menu Object
         const richMenu: RichMenu = {
-            size: { width: 2500, height: 1686 }, // Standard size, could make configurable later
+            size: data.size || { width: 2500, height: 1686 },
             selected: false,
             name: data.name,
             chatBarText: data.chatBarText,

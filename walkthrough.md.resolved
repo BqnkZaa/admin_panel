@@ -1,47 +1,48 @@
-# Broadcast Feature Upgrade Walkthrough
+# Visual Rich Menu Builder Walkthrough
 
-I have successfully upgraded the Broadcast feature to support advanced targeting (Tags, Specific Users) and Image messages, matching the Pro UI requirements.
+## Overview
+I have upgraded the Rich Menu creation flow from a manual JSON input to a user-friendly, multi-step visual builder.
 
-## Changes Implemented
+## Features
+- **3-Step Wizard**:
+    1.  **Basic Info**: Name, ChatBar Text, Image URL.
+    2.  **Template Selection**: Visual cards for standard layouts (Compact/Large).
+    3.  **Interactive Editor**: Click on the image grid to text/link/postback actions.
+- **Visual Feedback**: Configured areas light up in green.
+- **Validation**: Ensures correct inputs for Message (Text), URI (Link), and Postback (Data).
+- **Auto-JSON Generation**: Automatically constructs the complex `areas` JSON for the LINE API.
 
-### 1. Database Schema
-- **BroadcastTarget Enum**: Added `TAG` and `SPECIFIC_USERS`.
-- **Broadcast Model**: Added `targetConfig` (JSON) to support detailed targeting data.
-- **Migration**: Applied `upgrade_broadcast` migration.
+## Verification Steps
 
-### 2. UI Updates ([BroadcastForm](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#48-586))
-- **Broadcast Name**: Added top-level input for internal tracking.
-- **Message Types**: Added "Image" tab with URL input and preview.
-- **Targeting**:
-    - **Tags**: Multi-select interface fetching real tags from the database.
-    - **Specific Users**: Text area for comma-separated Line User IDs.
-    - **Rich Menu**: Existing functionality preserved and styled.
-- **Recipient Counter**: Added a real-time "Blue Info Bar" that calculates the estimated audience size based on selection.
+### 1. Open the Builder
+Navigate to the Rich Menu page and click **"Create Rich Menu"**.
 
-### 3. Backend Logic (`Server Actions` & `Worker`)
-- **[calculateRecipientCount](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-39)**: New action to query the database and return audience size for the UI counter.
-- **Worker ([run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts))**: Updated to handle `TAG` and `SPECIFIC_USERS` queries and correctly process `IMAGE` message types.
+### 2. Step 1: Basic Info
+- **Name**: `Test Menu 1`
+- **Chat Bar Text**: `Open Me`
+- **Image URL**: Use a 2500x1686 image for testing.
+    - *Example*: `https://via.placeholder.com/2500x1686.png?text=Menu+Background`
 
-## How to Verify
+### 3. Step 2: Select Template
+- Choose **"Large: 6 Buttons (2x3)"**.
 
-### 1. Test "Tags" Targeting
-1.  Go to **Broadcast** page.
-2.  Select **Target: Tags**.
-3.  Choose a tag (e.g., "VIP").
-4.  Observe the "Sending to X users" bar update.
-5.  Send the broadcast and verify that users with that tag receive it.
+### 4. Step 3: Configure Actions
+- You will see your image with a 6-grid overlay.
+- **Click on Area 1** (Top-Left):
+    - Select **Message**.
+    - Enter Text: `Hello World`.
+    - Click **Save Action**.
+- **Click on Area 2** (Top-Center):
+    - Select **Open Link**.
+    - Enter URL: `https://line.me`.
+    - Click **Save Action**.
 
-### 2. Test "Image" Broadcast
-1.  Select **Message Type: Image**.
-2.  Enter a valid HTTPS image URL (e.g., `https://via.placeholder.com/1024`).
-3.  Check the preview image.
-4.  Send and verify the image is received on LINE.
+### 5. Submit
+- Click **"Create Rich Menu"**.
+- Confirm the success message appears.
+- The new menu should appear in the list.
 
-### 3. Test "Specific Users"
-1.  Select **Target: Specific User**.
-2.  Enter your own Line User ID (found in [Customer](file:///d:/Workshop/line_oa/admin_panel/src/actions/customer.actions.ts#7-35) table or via the "Test Send" dialog helper).
-3.  Send and verify you receive the message.
-
-## Next Steps
-- Monitor the background worker logs in your hosting provider (Render) to ensure jobs are processing correctly.
-- You can now create more granular segments by adding tags to customers via the Chat or Automation rules.
+## Technical Details
+- **Templates**: Defined in `@/lib/rich-menu-templates.ts`.
+- **Component**: Refactored `CreateRichMenuDialog.tsx` handles state for steps and actions.
+- **Server Action**: Updated [createRichMenu](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts#27-101) in `@/actions/rich-menu.actions.ts` to accept dynamic `size` arguments (supporting both Compact 843px and Large 1686px heights).
