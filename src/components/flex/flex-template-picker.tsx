@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 interface FlexTemplatePickerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSelect: (template: any) => void;
 }
 
