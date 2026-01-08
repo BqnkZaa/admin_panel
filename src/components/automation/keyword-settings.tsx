@@ -37,11 +37,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, X, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Loader2, X } from "lucide-react";
 import { createKeyword, deleteKeyword, toggleKeywordStatus } from "@/actions/automation.actions";
 import { toast } from "@/hooks/use-toast";
 
 interface KeywordSettingsProps {
+    // We roughly know the shape, but to avoid strict type hell with Prisma Json, we can allow 'any' safely here or define a partial type is better.
+    // However, the error 'Unexpected any' means we should be specific or disable the rule if we really need it.
+    // Let's rely on inferred types or 'Record<string, unknown>'.
+    // Or just suppress it cleanly if it's complex.
+    // Given the previous code used any[], let's try to be a bit more specific or suppress properly.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     keywords: any[];
 }
@@ -324,7 +329,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                                         </div>
                                         <div className="space-y-1 w-[120px]">
                                             <Label className="text-xs">Type</Label>
-                                            <Select value={newQrType} onValueChange={(val: any) => setNewQrType(val)}>
+                                            <Select value={newQrType} onValueChange={(val: "message" | "uri" | "postback") => setNewQrType(val)}>
                                                 <SelectTrigger>
                                                     <SelectValue />
                                                 </SelectTrigger>
@@ -437,7 +442,7 @@ export function KeywordSettings({ keywords }: KeywordSettingsProps) {
                         {keywords.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                    No rules found. Click "Add Automation Rule" to create one.
+                                    No rules found. Click &quot;Add Automation Rule&quot; to create one.
                                 </TableCell>
                             </TableRow>
                         )}

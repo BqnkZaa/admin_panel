@@ -1,25 +1,45 @@
-# Walkthrough - Fix Broadcast Visibility
+# Auto-Reply Upgrade Walkthrough
 
-I have fixed the issue where broadcast messages were not appearing in the chat history.
+The Auto-Reply system has been upgraded to a "Pro" rule engine. Here's what's new and how to use it.
 
-## Changes
+## New Features
 
-### 1. Update Background Worker ([src/workers/run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts))
+### 1. Advanced Matching
+- **Exact Match**: Matches the keyword exactly as typed.
+- **Regex Match**: Use JavaScript Regular Expressions for powerful pattern matching (e.g., `^hello.*` matches "hello", "hello world", etc.).
 
-I modified the broadcast worker to:
-- **Select Customer ID**: Updated the query to fetch the `id` of each customer.
-- **Persist Messages**: Added logic to create a [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) record in the database for each successfully sent broadcast.
-    - Matches the broadcast content type (Text, Image, etc.).
-    - Links the message to the `broadcastId`.
-- **Update Conversation**: Added logic to update the [Conversation](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#7-39) record's `lastMessageAt` timestamp and increment the `unreadCount`. This ensures the chat moves to the top of the list in the admin panel.
+### 2. Rich Response Types
+- **Text**: Standard text replies.
+- **Flex Message**: Send fully customizable Flex Messages using JSON payloads.
+  - Requires `Alt Text` (displayed in notifications).
+  - Use the [LINE Flex Message Simulator](https://developers.line.biz/flex-simulator/) to design and copy the JSON.
 
-## Verification
+### 3. Custom Sender Identity
+- Override the default bot name and icon for specific rules.
+- Great for creating "personas" (e.g., "Support Agent" or "Sales Bot").
 
-### Automated Checks
-- [x] Code review confirms that `prisma.message.create` and `prisma.conversation.update` are called inside the broadcast loop.
-- [x] Confirmed `broadcastId` is correctly saved to the message.
+### 4. Quick Replies
+- Add up to 13 Quick Reply buttons to any auto-response.
+- Supports [Message](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#10-21), `Link (URI)`, and `Postback` actions.
 
-### Manual Verification Steps
-1.  Send a broadcast from the admin panel.
-2.  Refresh the chat list (or wait for the polling update).
-3.  The broadcast message will now appear in the chat history for all recipients.
+### 5. Auto-Tagging
+- Automatically assign tags (e.g., "VIP", "Interested") to any user who triggers a specific rule.
+
+## How to Test
+
+1.  **Restart Server**: Ensure the new schema and server actions are loaded (`npm run dev`).
+2.  **Create a Rule**:
+    - Go to **Automation > Auto-Reply**.
+    - Click **Add Automation Rule**.
+    - **Trigger**: Set Keyword `promo`, Match Type `REGEX`.
+    - **Response**: Select `FLEX`, paste valid Flex JSON. Add a Quick Reply "Buy Now".
+    - **Actions**: Add tag `Promo-Interested`.
+    - Click **Create**.
+3.  **Send Message**:
+    - Open your LINE bot.
+    - Send "promo" or "promotion".
+    - **Verify**: You receive the Flex Message, the sender might be custom (if set), and you see the Quick Reply. Check **Users** to see if you have the tag.
+
+## Troubleshooting
+- **Migration Error**: If the app fails to start, run `npx prisma migrate dev` again.
+- **Flex Message Not Sending**: Ensure the JSON is valid. Invalid JSON will cause the message to fail silently or log an error in the console.

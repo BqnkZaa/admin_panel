@@ -208,7 +208,7 @@ async function handleMessageEvent(userId: string, event: LineMessageEvent) {
         });
 
         let matchedRule = null;
-        let matchSource = null;
+        // matchSource removed as it was unused.
 
         // A. Exact Match
         matchedRule = allRules.find(r => r.matchType === 'EXACT' && r.keyword === userMessageText.trim());
@@ -246,14 +246,12 @@ async function handleMessageEvent(userId: string, event: LineMessageEvent) {
             let messagePayload: any = null;
 
             if (matchedRule.replyType === 'TEXT') {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const content = matchedRule.replyContent as any;
-                if (content && content.text) {
+                const content = matchedRule.replyContent as { text?: string };
+                if (content && typeof content === 'object' && content.text) {
                     messagePayload = { type: 'text', text: content.text };
                 }
             } else if (matchedRule.replyType === 'FLEX') {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const content = matchedRule.replyContent as any;
+                const content = matchedRule.replyContent;
                 if (content) {
                     messagePayload = {
                         type: 'flex',
