@@ -491,6 +491,50 @@ export default function BroadcastForm() {
                                 />
                             </div>
                         )}
+
+                        {targetType === "LIMIT" && (
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
+                                <Label>จำนวนคนที่จะส่ง (คน)</Label>
+                                <Input
+                                    type="number"
+                                    placeholder="เช่น 100"
+                                    value={specificUserIds}
+                                    onChange={(e) => setSpecificUserIds(e.target.value)}
+                                    className="bg-slate-50"
+                                    min={1}
+                                />
+                                <p className="text-xs text-muted-foreground">ระบบจะสุ่มส่งข้อความให้เท่ากับจำนวนที่ระบุ</p>
+                            </div>
+                        )}
+
+                        {targetType === "SEGMENT" && (
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
+                                <Label>เลือกกลุ่มเป้าหมาย (Segment)</Label>
+                                <Select value={specificUserIds} onValueChange={setSpecificUserIds}>
+                                    <SelectTrigger className="bg-slate-50">
+                                        <SelectValue placeholder="เลือก Segment" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="ACTIVE_7_DAYS">ใช้งานใน 7 วันล่าสุด</SelectItem>
+                                        <SelectItem value="ACTIVE_30_DAYS">ใช้งานใน 30 วันล่าสุด</SelectItem>
+                                        <SelectItem value="NEW_USER_30_DAYS">เพิ่มเพื่อนใหม่ใน 30 วันล่าสุด</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
+
+                        {targetType === "SINGLE" && (
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
+                                <Label>LINE User ID</Label>
+                                <Input
+                                    placeholder="U1234..."
+                                    value={specificUserIds}
+                                    onChange={(e) => setSpecificUserIds(e.target.value)}
+                                    className="bg-slate-50 font-mono text-sm"
+                                />
+                                <p className="text-xs text-muted-foreground">ระบุ User ID ของลูกค้าเพียงคนเดียว</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

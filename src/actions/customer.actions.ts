@@ -57,3 +57,69 @@ export async function toggleBlockStatus(customerId: string) {
         return { success: false, error: "Failed to update status" };
     }
 }
+
+export async function addTag(customerId: string, tag: string) {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Unauthorized" };
+
+    if (!tag || tag.trim() === "") return { success: false, error: "Tag cannot be empty" };
+
+    try {
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { tags: true }
+        });
+
+        if (!customer) return { success: false, error: "Customer not found" };
+
+        if (customer.tags.includes(tag)) {
+            return { success: true, tags: customer.tags };
+        }
+
+        const updated = await prisma.customer.update({
+            where: { id: customerId },
+            data: {
+                tags: {
+                    push: tag
+                }
+            }
+        });
+
+        revalidatePath("/customers");
+        return { success: true, tags: updated.tags };
+    } catch (error) {
+        console.error("Error adding tag:", error);
+        return { success: false, error: "Failed to add tag" };
+    }
+}
+
+export async function removeTag(customerId: string, tag: string) {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Unauthorized" };
+
+    try {
+        const customer = await prisma.customer.findUnique({
+            where: { id: customerId },
+            select: { tags: true }
+        });
+
+        if (!customer) return { success: false, error: "Customer not found" };
+
+        const newTags = customer.tags.filter(t => t !== tag);
+
+        const updated = await prisma.customer.update({
+            where: { id: customerId },
+            data: {
+                tags: {
+                    set: newTags
+                }
+            }
+        });
+
+        revalidatePath("/customers");
+        return { success: true, tags: updated.tags };
+    } catch (error) {
+        console.error("Error removing tag:", error);
+        return { success: false, error: "Failed to remove tag" };
+    }
+}
