@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { createRichMenu } from "@/actions/rich-menu.actions";
-import { Loader2, ArrowLeft, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { RICH_MENU_TEMPLATES, RichMenuTemplate } from "@/lib/rich-menu-templates";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,7 @@ interface CreateRichMenuDialogProps {
 }
 
 export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialogProps) {
-    const [step, setStep] = useState<1 | 2 | 3>(1);
+    // Removed 'step' state
     const [selectedTemplate, setSelectedTemplate] = useState<RichMenuTemplate | null>(null);
     const [configuredActions, setConfiguredActions] = useState<Record<number, ActionValues>>({});
     const [activeAreaIndex, setActiveAreaIndex] = useState<number | null>(null);
@@ -81,17 +81,10 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
         },
     });
 
-    const handleBasicInfoSubmit = async () => {
-        const result = await form.trigger();
-        if (result) {
-            setStep(2);
-        }
-    };
-
     const handleTemplateSelect = (template: RichMenuTemplate) => {
         setSelectedTemplate(template);
         setConfiguredActions({}); // Reset actions on template change
-        setStep(3);
+        // No step transition needed
     };
 
     const handleSaveAction = (index: number, action: ActionValues) => {
@@ -108,10 +101,21 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
         setActiveAreaIndex(null);
     };
 
-    const onSubmit = () => {
-        if (!selectedTemplate) return;
+    const onSubmit = async () => {
+        // 1. Validate Basic Info first
+        const isBasicInfoValid = await form.trigger();
+        if (!isBasicInfoValid) {
+            toast({ title: "Validation Error", description: "Please check the Basic Information section.", variant: "destructive" });
+            return;
+        }
 
-        // Construct final 'areas' array
+        // 2. Validate Template Selection
+        if (!selectedTemplate) {
+            toast({ title: "Validation Error", description: "Please select a Rich Menu layout template.", variant: "destructive" });
+            return;
+        }
+
+        // 3. Construct final 'areas' array
         const areas = Object.entries(configuredActions).map(([index, action]) => {
             const idx = parseInt(index);
             const templateArea = selectedTemplate.areas[idx];
@@ -121,8 +125,10 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
             };
         });
 
+        // 4. Validate Actions (Optional: Strict check if we want to enforce ALL buttons or AT LEAST ONE)
+        // Currently enforcing at least one
         if (areas.length === 0) {
-            toast({ title: "Error", description: "Please configure at least one button.", variant: "destructive" });
+            toast({ title: "Validation Error", description: "Please configure at least one button in the visual editor.", variant: "destructive" });
             return;
         }
 
@@ -148,7 +154,6 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
     };
 
     const resetDialog = () => {
-        setStep(1);
         form.reset();
         setSelectedTemplate(null);
         setConfiguredActions({});
@@ -163,19 +168,21 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
             onOpenChange(val);
         }}>
             <DialogContent className="sm:max-w-[900px] h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
-                <DialogHeader className="p-6 pb-2">
+                <DialogHeader className="p-6 pb-2 border-b">
                     <DialogTitle>Create Rich Menu</DialogTitle>
                     <DialogDescription>
-                        {step === 1 && "Step 1: Basic Information"}
-                        {step === 2 && "Step 2: Select Layout Template"}
-                        {step === 3 && "Step 3: Configure Actions"}
+                        Configure your rich menu layout and actions below.
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto p-6 pt-2">
-                    {step === 1 && (
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    {/* Section 1: Basic Info */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                            1. Basic Information
+                        </h3>
                         <Form {...form}>
-                            <form className="space-y-4">
+                            <form className="space-y-4 p-4 border rounded-lg bg-slate-50/50">
                                 <FormField
                                     control={form.control}
                                     name="name"
@@ -220,18 +227,25 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                 />
                             </form>
                         </Form>
-                    )}
+                    </div>
 
-                    {step === 2 && (
+                    {/* Section 2: Template Selection */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                            2. Select Layout Template
+                        </h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {RICH_MENU_TEMPLATES.map((tpl) => (
                                 <Card
                                     key={tpl.id}
-                                    className="cursor-pointer hover:border-black transition-all p-4 flex flex-col items-center gap-2"
+                                    className={cn(
+                                        "cursor-pointer transition-all p-4 flex flex-col items-center gap-2 border-2",
+                                        selectedTemplate?.id === tpl.id ? "border-blue-500 bg-blue-50/50" : "border-transparent hover:border-slate-300"
+                                    )}
                                     onClick={() => handleTemplateSelect(tpl)}
                                 >
                                     <div className={cn(
-                                        "w-full bg-slate-100 border border-slate-200 rounded-sm relative",
+                                        "w-full bg-slate-100 border border-slate-200 rounded-sm relative pointer-events-none", // pointer-events-none so click passes to Card
                                         tpl.type === 'compact' ? 'aspect-[2500/843]' : 'aspect-[2500/1686]'
                                     )}>
                                         {/* Mini Grid Preview */}
@@ -252,127 +266,112 @@ export function CreateRichMenuDialog({ open, onOpenChange }: CreateRichMenuDialo
                                 </Card>
                             ))}
                         </div>
-                    )}
+                    </div>
 
-                    {step === 3 && selectedTemplate && (
-                        <div className="flex flex-col gap-6">
-                            <div className="flex items-start justify-center bg-slate-100 p-4 border rounded-md overflow-hidden relative">
-                                <div className={cn("relative w-full max-w-[600px] shadow-lg",
-                                    selectedTemplate.type === 'compact' ? 'aspect-[2500/843]' : 'aspect-[2500/1686]'
-                                )}>
-                                    {/* Background Image */}
-                                    {form.getValues("imageUrl") ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img
-                                            src={form.getValues("imageUrl")}
-                                            alt="Rich Menu Background"
-                                            className="absolute inset-0 w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="absolute inset-0 bg-slate-200 flex items-center justify-center text-slate-400">
-                                            No Image
-                                        </div>
-                                    )}
+                    {/* Section 3: Visual Editor */}
+                    <div className={cn("space-y-4 transition-opacity", selectedTemplate ? "opacity-100" : "opacity-50 pointer-events-none grayscale")}>
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                            3. Configure Actions
+                            {!selectedTemplate && <span className="text-sm font-normal text-slate-500 ml-2">(Select a template first)</span>}
+                        </h3>
 
-                                    {/* Grid Overlay */}
-                                    {selectedTemplate.areas.map((area, idx) => {
-                                        const action = configuredActions[idx];
-                                        return (
-                                            <div
-                                                key={idx}
-                                                onClick={() => setActiveAreaIndex(idx)}
-                                                className={cn(
-                                                    "absolute border-2 transition-all cursor-pointer flex flex-col items-center justify-center text-xs text-center font-semibold select-none group",
-                                                    action
-                                                        ? "border-green-500 bg-green-500/30 text-white hover:bg-green-500/40"
-                                                        : "border-slate-400/50 hover:bg-white/30 text-transparent hover:text-black"
-                                                )}
-                                                style={{
-                                                    left: `${(area.x / 2500) * 100}%`,
-                                                    top: `${(area.y / (selectedTemplate.type === 'compact' ? 843 : 1686)) * 100}%`,
-                                                    width: `${(area.width / 2500) * 100}%`,
-                                                    height: `${(area.height / (selectedTemplate.type === 'compact' ? 843 : 1686)) * 100}%`,
-                                                }}
-                                            >
-                                                {action ? (
-                                                    <>
-                                                        <span className="bg-black/50 px-2 py-1 rounded mb-1">{idx + 1}</span>
-                                                        <span className="bg-black/50 px-2 py-1 rounded truncate max-w-[90%]">
-                                                            {action.type === 'message' ? action.text : action.type === 'uri' ? 'Link' : 'Postback'}
-                                                        </span>
-                                                    </>
-                                                ) : (
-                                                    <span className="bg-white/80 px-2 py-1 rounded text-black opacity-0 group-hover:opacity-100">
-                                                        Set Action {idx + 1}
-                                                    </span>
-                                                )}
+                        {selectedTemplate && (
+                            <div className="flex flex-col gap-6">
+                                <div className="flex items-start justify-center bg-slate-100 p-4 border rounded-md overflow-hidden relative">
+                                    <div className={cn("relative w-full max-w-[600px] shadow-lg",
+                                        selectedTemplate.type === 'compact' ? 'aspect-[2500/843]' : 'aspect-[2500/1686]'
+                                    )}>
+                                        {/* Background Image */}
+                                        {form.getValues("imageUrl") ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img
+                                                src={form.getValues("imageUrl")}
+                                                alt="Rich Menu Background"
+                                                className="absolute inset-0 w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="absolute inset-0 bg-slate-200 flex items-center justify-center text-slate-400">
+                                                No Image Preview
                                             </div>
-                                        );
-                                    })}
+                                        )}
+
+                                        {/* Grid Overlay */}
+                                        {selectedTemplate.areas.map((area, idx) => {
+                                            const action = configuredActions[idx];
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => setActiveAreaIndex(idx)}
+                                                    className={cn(
+                                                        "absolute border-2 transition-all cursor-pointer flex flex-col items-center justify-center text-xs text-center font-semibold select-none group",
+                                                        action
+                                                            ? "border-green-500 bg-green-500/30 text-white hover:bg-green-500/40"
+                                                            : "border-slate-400/50 hover:bg-white/30 text-transparent hover:text-black"
+                                                    )}
+                                                    style={{
+                                                        left: `${(area.x / 2500) * 100}%`,
+                                                        top: `${(area.y / (selectedTemplate.type === 'compact' ? 843 : 1686)) * 100}%`,
+                                                        width: `${(area.width / 2500) * 100}%`,
+                                                        height: `${(area.height / (selectedTemplate.type === 'compact' ? 843 : 1686)) * 100}%`,
+                                                    }}
+                                                >
+                                                    {action ? (
+                                                        <>
+                                                            <span className="bg-black/50 px-2 py-1 rounded mb-1">{idx + 1}</span>
+                                                            <span className="bg-black/50 px-2 py-1 rounded truncate max-w-[90%]">
+                                                                {action.type === 'message' ? action.text : action.type === 'uri' ? 'Link' : 'Postback'}
+                                                            </span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="bg-white/80 px-2 py-1 rounded text-black opacity-0 group-hover:opacity-100">
+                                                            Set Action {idx + 1}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                    {Object.entries(configuredActions).map(([idx, action]) => (
+                                        <div key={idx} className="flex items-center gap-2 p-2 border rounded text-sm bg-white">
+                                            <span className="bg-slate-200 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold">
+                                                {parseInt(idx) + 1}
+                                            </span>
+                                            <div className="flex-1 truncate">
+                                                <span className="font-semibold capitalize">{action.type}:</span>{" "}
+                                                {action.text || action.uri || action.data}
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-red-500"
+                                                onClick={() => handleDeleteAction(parseInt(idx))}
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    {Object.keys(configuredActions).length === 0 && (
+                                        <p className="text-sm text-slate-500 italic col-span-3 text-center py-4">
+                                            Click on the areas in the image above to configure actions.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                                {Object.entries(configuredActions).map(([idx, action]) => (
-                                    <div key={idx} className="flex items-center gap-2 p-2 border rounded text-sm">
-                                        <span className="bg-slate-200 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold">
-                                            {parseInt(idx) + 1}
-                                        </span>
-                                        <div className="flex-1 truncate">
-                                            <span className="font-semibold capitalize">{action.type}:</span>{" "}
-                                            {action.text || action.uri || action.data}
-                                        </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-red-500"
-                                            onClick={() => handleDeleteAction(parseInt(idx))}
-                                        >
-                                            <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                {Object.keys(configuredActions).length === 0 && (
-                                    <p className="text-sm text-slate-500 italic col-span-3 text-center py-4">
-                                        Click on the areas in the image above to configure actions.
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
                 <DialogFooter className="p-6 pt-2 border-t bg-slate-50">
-                    <div className="w-full flex justify-between">
-                        {step > 1 ? (
-                            <Button
-                                variant="outline"
-                                onClick={() => setStep(prev => (prev - 1) as 1 | 2 | 3)}
-                                disabled={isPending}
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" /> Back
-                            </Button>
-                        ) : (
-                            <div /> // Spacer
-                        )}
-
-                        {step === 1 && (
-                            <Button onClick={handleBasicInfoSubmit}>
-                                Next: Select Template
-                            </Button>
-                        )}
-                        {step === 2 && (
-                            <div className="text-sm text-slate-500 flex items-center">
-                                Select a layout to continue
-                            </div>
-                        )}
-                        {step === 3 && (
-                            <Button onClick={onSubmit} disabled={isPending}>
-                                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Create Rich Menu
-                            </Button>
-                        )}
-                    </div>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+                        Cancel
+                    </Button>
+                    <Button onClick={onSubmit} disabled={isPending}>
+                        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Create Rich Menu
+                    </Button>
                 </DialogFooter>
             </DialogContent>
 
@@ -501,3 +500,4 @@ function ActionConfigDialog({ open, onOpenChange, onSave, initialValue, title }:
         </Dialog>
     );
 }
+
