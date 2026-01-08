@@ -1,29 +1,51 @@
-# Implementation Plan - Flex Message Display
+# Implementation Plan - Rich Menu Broadcast Targeting
 
-The current [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#34-104) component does not have a rendering case for `FLEX` messages, so they are not displayed in the chat interface.
+The goal is to allow sending broadcasts to users who currently have a specific Rich Menu assigned.
 
 ## User Review Required
 
-> [!NOTE]
-> Rendering full Flex Message JSON exactly as it appears in LINE is complex (requires a dedicated Flex renderer library or iframe).
-> For this version, I will implement a **simplified display**:
-> - Show the `altText` of the Flex message (which is what shows up in push notifications).
-> - If `altText` is missing, show "[Flex Message]".
-> - This ensures admins at least know a message was sent and what it was generally about.
+> [!IMPORTANT]
+> **Data Synchronization**: This feature relies on the database knowing which user has which Rich Menu.
+> Currently, the system does not track this in the [Customer](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#24-28) table when linking menus.
+> I will update the "Link Rich Menu" action to save this state to the database.
+> **Note**: This will only track *future* changes made through this Admin Panel. Users who already have a menu assigned (or assigned outside this system) may not be reachable until they are re-linked via this panel.
 
 ## Proposed Changes
 
-### Chat Components
+### Database Schema
+#### [MODIFY] [schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma)
+- Update `enum BroadcastTarget` to include `RICH_MENU`.
 
-#### [MODIFY] [message-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx)
-- Update [MessageBubble](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#105-166) component to handle `contentType === "FLEX"` (or "flex", generally case-insensitive or checked against the stored value).
-- Extract `altText` from the content payload if available.
-- Render a styled bubble for Flex messages.
+### Backend Actions
+
+#### [MODIFY] [rich-menu.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts)
+- Update [linkRichMenuToUser](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts#138-153): Add `prisma.customer.update({ data: { richMenuAliasId: richMenuId } })`.
+- Update [unlinkRichMenuFromUser](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts#154-168): Add `prisma.customer.update({ data: { richMenuAliasId: null } })`.
+
+#### [MODIFY] [broadcast.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts)
+- Update [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-62) validation to allow `targetType: "RICH_MENU"`.
+
+### Workers
+
+#### [MODIFY] [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
+- Update customer query logic:
+    - If `targetType === "RICH_MENU"`, fetch customers where `richMenuAliasId` (or mapped field) matches the target.
+
+### Frontend
+
+#### [MODIFY] [broadcast-form.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx)
+- Add "Target: Rich Menu" radio option.
+- When selected, fetch and display a dropdown of available Rich Menus.
+- Pass the selected Rich Menu ID to the [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-62) action.
 
 ## Verification Plan
 
 ### Manual Verification
-1.  Send a text broadcast (already working).
-2.  Send a **Flex Broadcast** (using Postman or if the UI supports it, otherwise I can manually insert a test record or use the worker to send one).
-3.  Check the chat interface.
-4.  Verify that a bubble appears with the text "[Flex Message]" or the specific alt text.
+1.  **Setup**: Go to Rich Menu page, link "Menu A" to "Test User".
+2.  **Verify DB**: Check if [Customer](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#24-28) record for "Test User" has `richMenuAliasId` set.
+3.  **Broadcast**:
+    -   Create a new Broadcast.
+    -   Select Target "Rich Menu" -> "Menu A".
+    -   Send.
+4.  **Confirm**: Verify that "Test User" receives the message.
+5.  **Negative Test**: Link "Menu B" to another user (or unlink), send broadcast to "Menu A", confirm they do *not* receive it.

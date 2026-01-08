@@ -24,8 +24,23 @@ const worker = new Worker(
 
             // 2. Fetch customers
             // TODO: Handle segment filtering if implemented later
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const targetType = (job.data.targetType) || "ALL"; // Fallback for old jobs
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const targetIds = (job.data.targetIds) || [];
+
+            let query = {};
+            if (targetType === "ALL") {
+                query = { isFollowing: true };
+            } else if (targetType === "RICH_MENU" && targetIds.length > 0) {
+                query = {
+                    isFollowing: true,
+                    richMenuAliasId: { in: targetIds }
+                };
+            }
+
             const customers = await prisma.customer.findMany({
-                where: { isFollowing: true },
+                where: query,
                 select: { id: true, lineUserId: true, displayName: true },
             });
 

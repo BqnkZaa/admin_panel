@@ -184,6 +184,7 @@ enum BroadcastTarget {
   ALL
   SELECTED
   TAG
+  RICH_MENU
 }
 
 enum BroadcastStatus {

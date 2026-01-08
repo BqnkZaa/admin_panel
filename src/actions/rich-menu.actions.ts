@@ -4,6 +4,7 @@ import { lineClient, lineBlobClient } from "@/lib/line";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { RichMenu } from "@line/bot-sdk";
+import { prisma } from "@/lib/prisma";
 
 // Define a type for our internal representation if needed, 
 // but LINE SDK types are usually sufficient.
@@ -142,6 +143,14 @@ export async function linkRichMenuToUser(userId: string, richMenuId: string) {
     try {
         console.log(`Linking Rich Menu ${richMenuId} to User ${userId}`);
         await lineClient.linkRichMenuIdToUser(userId, richMenuId);
+
+        // --- NEW: Sync to DB ---
+        await prisma.customer.update({
+            where: { lineUserId: userId },
+            data: { richMenuAliasId: richMenuId }
+        });
+        // -----------------------
+
         console.log("Link successful");
         revalidatePath(`/chat/${userId}`); // Revalidate chat page
         return { success: true };
@@ -158,6 +167,14 @@ export async function unlinkRichMenuFromUser(userId: string) {
     try {
         console.log(`Unlinking Rich Menu from User ${userId}`);
         await lineClient.unlinkRichMenuIdFromUser(userId);
+
+        // --- NEW: Sync to DB ---
+        await prisma.customer.update({
+            where: { lineUserId: userId },
+            data: { richMenuAliasId: null }
+        });
+        // -----------------------
+
         revalidatePath(`/chat/${userId}`);
         return { success: true };
     } catch (error) {

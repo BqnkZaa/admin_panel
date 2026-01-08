@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -58,7 +58,22 @@ export default function BroadcastForm() {
     const [testUserId, setTestUserId] = useState("");
     const [isTestPending, startTestTransition] = useTransition();
     const { toast } = useToast();
+    interface RichMenu {
+        richMenuId: string;
+        name: string;
+    }
+
+    const [targetType, setTargetType] = useState("all");
+    const [richMenus, setRichMenus] = useState<RichMenu[]>([]);
+    const [selectedRichMenuId, setSelectedRichMenuId] = useState("");
     const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
+
+    useEffect(() => {
+        // Fetch Rich Menus on load
+        import("@/actions/rich-menu.actions").then(({ getRichMenus }) => {
+            getRichMenus().then(setRichMenus);
+        });
+    }, []);
 
     const handleProductSelect = (json: string) => {
         setFlexJson(json);
@@ -103,7 +118,8 @@ export default function BroadcastForm() {
             await sendBroadcast({
                 name: `Broadcast ${new Date().toLocaleString('th-TH')}`,
                 messageContent: content,
-                targetType: "ALL",
+                targetType: targetType === "rich_menu" ? "RICH_MENU" : "ALL",
+                targetIds: targetType === "rich_menu" ? [selectedRichMenuId] : [],
                 scheduledAt: scheduledAt,
             });
 
@@ -147,7 +163,9 @@ export default function BroadcastForm() {
         });
     };
 
-    const isValid = messageType === "text" ? textMessage.trim().length > 0 : (flexJson.length > 0 && !jsonError);
+    const isContentValid = messageType === "text" ? textMessage.trim().length > 0 : (flexJson.length > 0 && !jsonError);
+    const isTargetValid = targetType === "all" || (targetType === "rich_menu" && selectedRichMenuId);
+    const isValid = isContentValid && isTargetValid;
     const isScheduleValid = !isScheduled || (isScheduled && scheduledDate);
 
     return (
@@ -159,17 +177,52 @@ export default function BroadcastForm() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label>ผู้รับ</Label>
-                    <Select defaultValue="all">
-                        <SelectTrigger>
-                            <SelectValue placeholder="เลือกกลุ่มเป้าหมาย" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">ลูกค้าทั้งหมด (All)</SelectItem>
-                            <SelectItem value="selected" disabled>เลือกเอง (Coming Soon)</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>ผู้รับ</Label>
+                        <Select
+                            value={targetType}
+                            onValueChange={(val) => {
+                                setTargetType(val);
+                                // Reset selection if switching away
+                                if (val !== "rich_menu") setSelectedRichMenuId("");
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="เลือกกลุ่มเป้าหมาย" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">ลูกค้าทั้งหมด (All)</SelectItem>
+                                <SelectItem value="rich_menu">กลุ่ม Rich Menu</SelectItem>
+                                <SelectItem value="selected" disabled>เลือกเอง (Coming Soon)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {targetType === "rich_menu" && (
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                            <Label>เลือก Rich Menu</Label>
+                            <Select
+                                value={selectedRichMenuId}
+                                onValueChange={setSelectedRichMenuId}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="เลือก Rich Menu ที่ต้องการส่งหา" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {richMenus.length === 0 ? (
+                                        <div className="p-2 text-sm text-muted-foreground text-center">ไม่มี Rich Menu</div>
+                                    ) : (
+                                        richMenus.map((menu) => (
+                                            <SelectItem key={menu.id} value={menu.richMenuId}>
+                                                {menu.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center space-x-2 border p-3 rounded-lg bg-slate-50">
