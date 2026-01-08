@@ -1,33 +1,29 @@
-# Implementation Plan - Fix Broadcast Visibility in Chat
+# Implementation Plan - Flex Message Display
 
-Broadcast messages are currently sent via the LINE API but are not recorded in the application's [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) database table. Consequently, they do not appear in the chat history.
-
-To fix this, I will update the background worker to create a [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) record for each customer who successfully receives the broadcast.
+The current [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#34-104) component does not have a rendering case for `FLEX` messages, so they are not displayed in the chat interface.
 
 ## User Review Required
 
 > [!NOTE]
-> This change will strictly apply to **new** broadcasts. Old broadcasts that were already sent will not retrospectively appear in the chat history unless we run a migration (which is out of scope for this quick fix).
+> Rendering full Flex Message JSON exactly as it appears in LINE is complex (requires a dedicated Flex renderer library or iframe).
+> For this version, I will implement a **simplified display**:
+> - Show the `altText` of the Flex message (which is what shows up in push notifications).
+> - If `altText` is missing, show "[Flex Message]".
+> - This ensures admins at least know a message was sent and what it was generally about.
 
 ## Proposed Changes
 
-### Background Worker
+### Chat Components
 
-#### [MODIFY] [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
-- Import `MessageType` and `Prisma` types.
-- Inside the broadcasting loop, after successfully sending a message to LINE:
-    - Create a [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) record in the database.
-    - Set `type` to match the broadcast content (e.g., 'TEXT', 'IMAGE').
-    - Set `direction` to `OUTBOUND`.
-    - Set `status` to `SENT`.
-    - Link it to the `broadcastId` and `customerId`.
-    - Link it to the `conversationId` (fetch it from the customer relation).
+#### [MODIFY] [message-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx)
+- Update [MessageBubble](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#105-166) component to handle `contentType === "FLEX"` (or "flex", generally case-insensitive or checked against the stored value).
+- Extract `altText` from the content payload if available.
+- Render a styled bubble for Flex messages.
 
 ## Verification Plan
 
 ### Manual Verification
-1.  Run the worker locally (`npx ts-node src/workers/run.ts` or ensure it's running).
-2.  Send a new Broadcast from the Admin Panel.
-3.  Wait for the broadcast to complete.
-4.  Go to the Chat page for one of the recipients.
-5.  Verify that the broadcast message appears in the chat history.
+1.  Send a text broadcast (already working).
+2.  Send a **Flex Broadcast** (using Postman or if the UI supports it, otherwise I can manually insert a test record or use the worker to send one).
+3.  Check the chat interface.
+4.  Verify that a bubble appears with the text "[Flex Message]" or the specific alt text.

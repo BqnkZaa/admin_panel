@@ -152,6 +152,12 @@ function MessageBubble({
                 {contentType === "location" && (
                     <div className="text-sm opacity-70">[ตำแหน่ง]</div>
                 )}
+                {(contentType === "flex" || contentType === "FLEX") && (
+                    <div className="text-sm">
+                        <span className="opacity-70 font-semibold text-xs">[Flex Message]</span>
+                        <p className="mt-1">{(content as any).altText || "กดเพื่อดูรายละเอียด"}</p>
+                    </div>
+                )}
             </div>
 
             <span className="text-[10px] text-muted-foreground self-end">
