@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { MatchType, MessageType } from "@prisma/client";
+import { MatchType, MessageType, Prisma } from "@prisma/client";
 
 // ========== WELCOME MESSAGE ACTIONS ==========
 
@@ -72,11 +72,11 @@ export async function createKeyword(data: {
     keyword: string;
     matchType: MatchType;
     replyType: MessageType;
-    replyContent: any; // Text string or Flex JSON
+    replyContent: Prisma.InputJsonValue; // Was any
     altText?: string;
     senderName?: string;
     senderIconUrl?: string;
-    quickReplies?: any; // Array of objects
+    quickReplies?: Prisma.InputJsonValue; // Was any
     tagsToAdd?: string[];
     description?: string;
     isActive: boolean;
@@ -112,11 +112,11 @@ export async function updateKeyword(id: string, data: {
     keyword: string;
     matchType: MatchType;
     replyType: MessageType;
-    replyContent: any;
+    replyContent: Prisma.InputJsonValue;
     altText?: string;
     senderName?: string;
     senderIconUrl?: string;
-    quickReplies?: any;
+    quickReplies?: Prisma.InputJsonValue;
     tagsToAdd?: string[];
     description?: string;
     isActive: boolean;

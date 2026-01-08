@@ -243,6 +243,7 @@ async function handleMessageEvent(userId: string, event: LineMessageEvent) {
             }
 
             // 2. Construct Reply Message
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let messagePayload: any = null;
 
             if (matchedRule.replyType === 'TEXT') {
