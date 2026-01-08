@@ -4,6 +4,7 @@ import { Worker, Job } from "bullmq";
 import { redis } from "../lib/redis";
 import { lineClient } from "../lib/line";
 import { prisma } from "../lib/prisma";
+import { Prisma, MessageType } from "@prisma/client";
 import { BROADCAST_QUEUE_NAME } from "../lib/queue";
 
 console.log("🚀 Starting Broadcast Worker...");
@@ -44,7 +45,7 @@ const worker = new Worker(
 
                     // --- NEW: Persist to DB ---
                     try {
-                        const customerId = (customer as any).id;
+                        const customerId = customer.id;
 
                         // 1. Get or Create Conversation
                         let conversation = await prisma.conversation.findUnique({
@@ -62,22 +63,24 @@ const worker = new Worker(
                         }
 
                         // 2. Determine Message Type
+                        const content = messageContent as Prisma.InputJsonValue;
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const content = messageContent as any;
+                        const contentObj = messageContent as any;
+
                         let msgType = "TEXT";
-                        if (content.type === "image") msgType = "IMAGE";
-                        else if (content.type === "sticker") msgType = "STICKER";
-                        else if (content.type === "video") msgType = "VIDEO";
-                        else if (content.type === "audio") msgType = "AUDIO";
-                        else if (content.type === "location") msgType = "LOCATION";
-                        else if (content.type === "flex") msgType = "FLEX";
+                        if (contentObj.type === "image") msgType = "IMAGE";
+                        else if (contentObj.type === "sticker") msgType = "STICKER";
+                        else if (contentObj.type === "video") msgType = "VIDEO";
+                        else if (contentObj.type === "audio") msgType = "AUDIO";
+                        else if (contentObj.type === "location") msgType = "LOCATION";
+                        else if (contentObj.type === "flex") msgType = "FLEX";
 
                         // 3. Create Message Record
                         await prisma.message.create({
                             data: {
                                 customerId: customerId,
                                 conversationId: conversation.id,
-                                type: msgType as any,
+                                type: msgType as MessageType,
                                 direction: "OUTBOUND",
                                 content: content, // Save the raw JSON
                                 status: "SENT",
