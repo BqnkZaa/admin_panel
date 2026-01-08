@@ -386,15 +386,21 @@ export default function BroadcastForm() {
                                 icon={<Database className="w-4 h-4" />}
                                 label="ในฐานข้อมูล"
                             />
-                            <TargetOptionDisabled
+                            <TargetOption
+                                active={targetType === "ALL_FRIENDS"}
+                                onClick={() => setTargetType("ALL_FRIENDS")}
                                 icon={<Users className="w-4 h-4" />}
                                 label="เพื่อนทั้งหมด"
                             />
-                            <TargetOptionDisabled
+                            <TargetOption
+                                active={targetType === "LIMIT"}
+                                onClick={() => setTargetType("LIMIT")}
                                 icon={<Hash className="w-4 h-4" />}
                                 label="จำกัดจำนวน"
                             />
-                            <TargetOptionDisabled
+                            <TargetOption
+                                active={targetType === "SEGMENT"}
+                                onClick={() => setTargetType("SEGMENT")}
                                 icon={<Layers className="w-4 h-4" />}
                                 label="Segment"
                             />
@@ -420,7 +426,9 @@ export default function BroadcastForm() {
                                 icon={<UserPlus className="w-4 h-4" />}
                                 label="เลือกเอง"
                             />
-                            <TargetOptionDisabled
+                            <TargetOption
+                                active={targetType === "SINGLE"}
+                                onClick={() => setTargetType("SINGLE")}
                                 icon={<User className="w-4 h-4" />}
                                 label="คนเดียว"
                             />
