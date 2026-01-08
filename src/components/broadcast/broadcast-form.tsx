@@ -628,19 +628,4 @@ function TargetOption({ active, onClick, icon, label }: { active: boolean, onCli
     );
 }
 
-function TargetOptionDisabled({ icon, label }: { icon: React.ReactNode, label: string }) {
-    return (
-        <button
-            disabled
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 text-sm min-w-[120px] cursor-not-allowed opacity-75"
-        >
-            <div className="w-4 h-4 rounded-full border border-slate-200" />
-            <div className="flex items-center gap-2">
-                <div className="p-1 rounded bg-slate-100">
-                    {icon}
-                </div>
-                {label}
-            </div>
-        </button>
-    );
-}
+
