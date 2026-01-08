@@ -25,7 +25,7 @@ const worker = new Worker(
             // TODO: Handle segment filtering if implemented later
             const customers = await prisma.customer.findMany({
                 where: { isFollowing: true },
-                select: { lineUserId: true, displayName: true },
+                select: { id: true, lineUserId: true, displayName: true },
             });
 
             console.log(`[Job ${job.id}] Found ${customers.length} target customers.`);
@@ -41,7 +41,65 @@ const worker = new Worker(
                         messages: [messageContent],
                     });
                     sentCount++;
-                    // console.log(`   Sent to ${customer.displayName}`);
+
+                    // --- NEW: Persist to DB ---
+                    try {
+                        const customerId = (customer as any).id;
+
+                        // 1. Get or Create Conversation
+                        let conversation = await prisma.conversation.findUnique({
+                            where: { customerId: customerId },
+                        });
+
+                        if (!conversation) {
+                            conversation = await prisma.conversation.create({
+                                data: {
+                                    customerId: customerId,
+                                    status: "OPEN",
+                                    unreadCount: 0,
+                                },
+                            });
+                        }
+
+                        // 2. Determine Message Type
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const content = messageContent as any;
+                        let msgType = "TEXT";
+                        if (content.type === "image") msgType = "IMAGE";
+                        else if (content.type === "sticker") msgType = "STICKER";
+                        else if (content.type === "video") msgType = "VIDEO";
+                        else if (content.type === "audio") msgType = "AUDIO";
+                        else if (content.type === "location") msgType = "LOCATION";
+                        else if (content.type === "flex") msgType = "FLEX";
+
+                        // 3. Create Message Record
+                        await prisma.message.create({
+                            data: {
+                                customerId: customerId,
+                                conversationId: conversation.id,
+                                type: msgType as any,
+                                direction: "OUTBOUND",
+                                content: content, // Save the raw JSON
+                                status: "SENT",
+                                sentAt: new Date(),
+                                broadcastId: broadcastId, // Link to broadcast
+                            }
+                        });
+
+
+                        // 4. Update Conversation Timestamp
+                        await prisma.conversation.update({
+                            where: { id: conversation.id },
+                            data: {
+                                lastMessageAt: new Date(),
+                                unreadCount: { increment: 1 }
+                            }
+                        });
+
+                    } catch (dbError) {
+                        console.error(`   Failed to save message to DB for ${customer.displayName}:`, dbError);
+                    }
+                    // --------------------------
                 } catch (error) {
                     console.error(`   Failed to send to ${customer.displayName}:`, error);
                     failedCount++;

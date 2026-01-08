@@ -1,30 +1,33 @@
-# Implementation Plan - Chat Real-time Updates
+# Implementation Plan - Fix Broadcast Visibility in Chat
 
-The customer chat interface currently does not update automatically when new messages arrive. This is because the message list is rendered once on the server and never refreshed on the client. To fix this, I will implement a polling mechanism to periodically fetch new messages.
+Broadcast messages are currently sent via the LINE API but are not recorded in the application's [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) database table. Consequently, they do not appear in the chat history.
+
+To fix this, I will update the background worker to create a [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) record for each customer who successfully receives the broadcast.
 
 ## User Review Required
 
 > [!NOTE]
-> I will be using **Polling** (every 3 seconds) to fetch new messages. This is a simple and robust solution for Vercel deployments where long-running connections (Websockets) can be tricky without external services like Pusher or Supabase Realtime.
+> This change will strictly apply to **new** broadcasts. Old broadcasts that were already sent will not retrospectively appear in the chat history unless we run a migration (which is out of scope for this quick fix).
 
 ## Proposed Changes
 
-### Chat Components
+### Background Worker
 
-#### [MODIFY] [message-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx)
-- Add a polling mechanism using `useEffect` and `setInterval`.
-- Call the [getMessages](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#40-59) Server Action to fetch the latest messages.
-- Update the message list state when new messages arrive.
-- Ensure the scroll position is handled correctly (only scroll to bottom if already at bottom or new message is from self).
-
-#### [MODIFY] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/chat/[customerId]/page.tsx)
-- Pass the `customerId` to [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#33-61) explicitly.
+#### [MODIFY] [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
+- Import `MessageType` and `Prisma` types.
+- Inside the broadcasting loop, after successfully sending a message to LINE:
+    - Create a [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) record in the database.
+    - Set `type` to match the broadcast content (e.g., 'TEXT', 'IMAGE').
+    - Set `direction` to `OUTBOUND`.
+    - Set `status` to `SENT`.
+    - Link it to the `broadcastId` and `customerId`.
+    - Link it to the `conversationId` (fetch it from the customer relation).
 
 ## Verification Plan
 
 ### Manual Verification
-1.  Open the Chat page for a specific customer.
-2.  Send a message from the LINE app (as the customer) to the LINE OA.
-3.  Observe that the message appears in the Admin Panel chat window within 3-4 seconds without refreshing the page.
-4.  Send a message from the Admin Panel.
-5.  Observe it appears immediately.
+1.  Run the worker locally (`npx ts-node src/workers/run.ts` or ensure it's running).
+2.  Send a new Broadcast from the Admin Panel.
+3.  Wait for the broadcast to complete.
+4.  Go to the Chat page for one of the recipients.
+5.  Verify that the broadcast message appears in the chat history.

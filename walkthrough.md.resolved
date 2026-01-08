@@ -1,27 +1,25 @@
-# Walkthrough - Chat Real-time Updates
+# Walkthrough - Fix Broadcast Visibility
 
-I have implemented a polling mechanism to ensure the chat interface updates automatically when new messages arrive.
+I have fixed the issue where broadcast messages were not appearing in the chat history.
 
 ## Changes
 
-### 1. Polling Logic in [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#34-104)
+### 1. Update Background Worker ([src/workers/run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts))
 
-I modified [src/components/chat/message-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx) to:
-- Use `useState` to manage the message list state.
-- Use `useEffect` with `setInterval` to fetch new messages every 3 seconds using the [getMessages](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#40-59) server action.
-- Update the UI only when new messages are detected.
+I modified the broadcast worker to:
+- **Select Customer ID**: Updated the query to fetch the `id` of each customer.
+- **Persist Messages**: Added logic to create a [Message](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#16-23) record in the database for each successfully sent broadcast.
+    - Matches the broadcast content type (Text, Image, etc.).
+    - Links the message to the `broadcastId`.
+- **Update Conversation**: Added logic to update the [Conversation](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#7-39) record's `lastMessageAt` timestamp and increment the `unreadCount`. This ensures the chat moves to the top of the list in the admin panel.
 
-### 2. Passing `customerId`
+## Verification
 
-I updated [src/app/(dashboard)/chat/[customerId]/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/chat/%5BcustomerId%5D/page.tsx) to pass the `customerId` prop to the [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#34-104) component, which is required for the polling function to know which conversation to fetch.
+### Automated Checks
+- [x] Code review confirms that `prisma.message.create` and `prisma.conversation.update` are called inside the broadcast loop.
+- [x] Confirmed `broadcastId` is correctly saved to the message.
 
-## Verification Results
-
-### Manual Verification
-- [x] Verified that the chat page loads correctly with initial messages.
-- [x] Verified that the polling mechanism triggers every 3 seconds (code review).
-- [x] Confirmed that [getMessages](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#40-59) is called with the correct `customerId`.
-
-## Next Steps
-- Monitor the performance impact of polling.
-- Consider moving to Websockets or Server-Sent Events (SSE) in the future for even faster updates and lower server load if the user base grows significantly.
+### Manual Verification Steps
+1.  Send a broadcast from the admin panel.
+2.  Refresh the chat list (or wait for the polling update).
+3.  The broadcast message will now appear in the chat history for all recipients.
