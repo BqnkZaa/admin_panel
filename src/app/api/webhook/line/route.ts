@@ -99,13 +99,29 @@ async function handleFollowEvent(userId: string) {
         });
 
         if (welcomeMsg && welcomeMsg.content) {
-            // Cast content to any to access properties safely
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const content = welcomeMsg.content as any;
-            if (content.type === 'text' && content.text) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let messagePayload: any = null;
+
+            if (welcomeMsg.messageType === 'FLEX') {
+                messagePayload = {
+                    type: 'flex',
+                    altText: welcomeMsg.altText || 'Welcome Message',
+                    contents: content
+                };
+            } else {
+                // Default to TEXT or check legacy structure
+                const text = content.text || (typeof content === 'string' ? content : '');
+                if (text) {
+                    messagePayload = { type: 'text', text };
+                }
+            }
+
+            if (messagePayload) {
                 await lineClient.pushMessage({
                     to: userId,
-                    messages: [{ type: 'text', text: content.text }],
+                    messages: [messagePayload],
                 });
                 console.log(`Sent welcome message to ${userId}`);
             }

@@ -1,67 +1,45 @@
-# Auto-Reply System Upgrade Plan
+# Welcome Message Upgrade Plan
 
-## Goal Description
-Upgrade the current simple "Keyword -> Reply" system to a "Pro" rule engine. This includes adding support for Regex matching, Custom Sender Identities (override bot name/icon), Flex Messages (JSON payload), Quick Replies, and automatic Tag assignment.
-
-## User Review Required
-> [!IMPORTANT]
-> The default `matchType` for new keywords will be changed to `EXACT` (currently schema says `CONTAINS`, but code defaults to `EXACT` in [keyword-settings.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/automation/keyword-settings.tsx)).
-> I will update the schema default to `EXACT` as requested.
+## Goal
+Upgrade the Welcome Message feature to support **Text** and **Flex Message** types with a toggle UI, matching the reference design.
 
 ## Proposed Changes
 
-### Database Schema
-#### [MODIFY] [schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma)
-- Update `AutoReplyKeyword` model:
-    - Change `matchType` default to `EXACT`.
-    - Add `description` (String?).
-    - Add `senderName` (String?).
-    - Add `senderIconUrl` (String?).
-    - Add `quickReplies` (Json?).
-    - Add `tagsToAdd` (String[]).
+### 1. Database Schema ([prisma/schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma))
+- Modify [WelcomeMessage](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#10-21) model:
+    - Ensure `messageType` is used (or map `type` request to it).
+    - Add `altText` (String?) for Flex messages.
+    - **Note**: EXISTING `content` (Json) will be preferred over a new `message` String field to maintain consistency with `AutoReplyKeyword` and allow structured data storage. The UI will handle stringifying/parsing.
 
-### UI Components
-#### [MODIFY] [keyword-settings.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/automation/keyword-settings.tsx)
-- Redesign the "Add/Edit Rule" Dialog with a Tabbed or Accordion interface.
-- **Trigger Tab**: Keyword, Match Type (Exact/Regex), Description.
-- **Reply Tab**:
-    - Reply Type Selector (Text / Flex).
-    - Content Editor (Textarea for Text, JSON Editor for Flex).
-    - Sender Identity (Name, Icon).
-    - Quick Replies Builder (Dynamic list of buttons).
-- **Actions Tab**:
-    - Tags input (Add tags to user on match).
+    ```prisma
+    model WelcomeMessage {
+      // ... existing fields
+      messageType MessageType @default(TEXT)
+      content     Json
+      altText     String? // [NEW] Use for Flex alt text
+      // ...
+    }
+    ```
 
-### Backend Logic
-#### [MODIFY] [route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts)
-- Refactor [handleMessageEvent](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts#137-285) to support complex matching.
-- **Matching Logic**:
-    - Fetch active rules.
-    - Iterate to check `EXACT` matches first, then `REGEX`.
-    - Use `new RegExp(keyword).test(userMessage)` for regex type.
-- **Execution Logic**:
-    - If match found:
-        - Construct message payload (TEXT or FLEX).
-        - append `sender` and `quickReply` objects if present.
-        - Send reply via `lineClient`.
-        - Apply `tagsToAdd` to the `Customer` record.
+### 2. UI Updates ([src/components/automation/welcome-settings.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/automation/welcome-settings.tsx))
+- Refactor the component to match the "Reference Image" layout:
+    - **Header**: "Enable Welcome Message" switch.
+    - **Message Type**: Big Radio Cards (Text vs Flex).
+    - **Editor**:
+        - **Text**: Simple Textarea.
+        - **Flex**: JSON Editor (Textarea monospace) + "Alt Text" input + "Load Template" button (Simulated or actual if templates exist).
 
-## Verification Plan
+### 3. Server Actions (`src/actions/welcome.actions.ts`)
+- Update [saveWelcomeMessage](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#22-55) to accept `altText` and handle `messageType`.
 
-### Automated Tests
-- None existing for UI interactions.
+### 4. Webhook Logic ([src/app/api/webhook/line/route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts))
+- Update [handleFollowEvent](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts#70-125):
+    - Fetch [WelcomeMessage](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#10-21).
+    - Check `messageType`.
+    - If `FLEX`: usage `lineClient.pushMessage` with `{ type: 'flex', altText: wm.altText, contents: wm.content }`.
+    - If `TEXT`: usage `lineClient.pushMessage` with `{ type: 'text', text: wm.content.text }`.
 
-### Manual Verification
-1.  **Database Migration**: Run `npx prisma migrate dev` and verify no errors.
-2.  **UI Testing**:
-    - Open Automation > Auto-Reply.
-    - Create a rule with **Regex** (e.g., `^hello.*`).
-    - Set a **Custom Sender** (e.g., "Support Bot").
-    - Add a **Quick Reply** button.
-    - Add a **Tag** to apply (e.g., "Tested").
-3.  **Functional Testing** (requires LINE App):
-    - Send "hello world" to the bot.
-    - Verify:
-        - Bot replies with custom sender name/icon.
-        - Quick reply buttons appear.
-        - Admin Panel > Users tag list includes "Tested".
+## Verification
+- Run migration.
+- Test UI: Toggle types, save, reload.
+- Test Webhook: Follow the bot, verify correct message type and content is received.

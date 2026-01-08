@@ -19,7 +19,12 @@ export async function getWelcomeMessage() {
     }
 }
 
-export async function saveWelcomeMessage(content: string, isActive: boolean) {
+export async function saveWelcomeMessage(data: {
+    messageType: MessageType;
+    content: Prisma.InputJsonValue;
+    altText?: string;
+    isActive: boolean;
+}) {
     const session = await auth();
     if (!session?.user) return { success: false, error: "Unauthorized" };
 
@@ -31,17 +36,20 @@ export async function saveWelcomeMessage(content: string, isActive: boolean) {
             await prisma.welcomeMessage.update({
                 where: { id: existing.id },
                 data: {
-                    content: { type: "text", text: content },
-                    isActive,
+                    messageType: data.messageType,
+                    content: data.content,
+                    altText: data.altText,
+                    isActive: data.isActive,
                 },
             });
         } else {
             await prisma.welcomeMessage.create({
                 data: {
                     name: "Default Welcome",
-                    messageType: "TEXT",
-                    content: { type: "text", text: content },
-                    isActive,
+                    messageType: data.messageType,
+                    content: data.content,
+                    altText: data.altText,
+                    isActive: data.isActive,
                 },
             });
         }
