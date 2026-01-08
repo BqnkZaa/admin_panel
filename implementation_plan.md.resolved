@@ -1,0 +1,67 @@
+# Implementation Plan - Phase 8: Activate Missing UI Pages
+
+## Goal
+Replace placeholders for [Customers](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/customers/page.tsx#3-21), `Flex Builder`, and [Settings](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/settings/page.tsx#3-21) pages with fully functional interfaces, enabling comprehensive user management, template reuse, and system monitoring.
+
+## User Review Required
+> [!IMPORTANT]
+> **Database Schema Change**: A new `FlexTemplate` model will be added. This requires running a database migration.
+>
+> **Action Required**: After I update the schema, I will run `npx prisma migrate dev --name add_flex_template` to apply changes.
+
+## Proposed Changes
+
+### 1. Customers Page (`src/app/customers`)
+#### [NEW] [customer.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/customer.actions.ts)
+- `getCustomers(page, limit)`: Fetch users with pagination and `include: { tags: true }`.
+- `toggleBlockStatus(customerId)`: Toggle `isBlocked` boolean.
+
+#### [NEW] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/customers/page.tsx)
+- Use `Shadcn Table` component.
+- Columns: Avatar, Name, Status (Badge), Tags (Badge list), Last Active.
+- Row Actions (DropdownMenu):
+    - [View Chat]: Link to `/chat/[id]`
+    - [Block/Unblock]: Call server action.
+
+### 2. Flex Builder Page (`src/app/flex-builder`)
+#### [MODIFY] [schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma)
+- Add `model FlexTemplate`:
+```prisma
+model FlexTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  content   Json     // Store the Flex Bubble JSON
+  previewUrl String? // Optional image preview
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+#### [NEW] [flex-template.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/flex-template.actions.ts)
+- `getTemplates()`: Fetch all.
+- `saveTemplate(name, json)`: Create or Update.
+- `deleteTemplate(id)`: Remove.
+
+#### [NEW] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/flex-builder/page.tsx)
+- **View Mode**: Grid of saved templates. "Create New" card as first item.
+- **Edit Mode** (Dialog or separate view state):
+    - Left Pane: JSON Editor (Monaco or Textarea).
+    - Right Pane: Live Preview (Existing visualizer logic).
+    - "Save" Button.
+
+### 3. Settings Page (`src/app/settings`)
+#### [NEW] [settings.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/settings.actions.ts)
+- `checkSystemHealth()`:
+    - DB: `prisma.$queryRaw 'SELECT 1'`
+    - Redis: Ping queue.
+- `testLineConnection()`: `lineClient.getBotInfo()`.
+
+#### [NEW] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/settings/page.tsx)
+- **Status Section**: Cards showing "Database: Connected", "Redis: Connected".
+- **LINE Integration**: Display Bot Name, Basic ID, Picture. "Test Connection" button.
+- **Admin**: Simple form to display current admin email (Reset password out of scope for now unless requested).
+
+## Verification Plan
+1.  **Customers**: Block a user in the table. Verify badge changes to "Blocked". Check DB.
+2.  **Flex Builder**: Create a template "Promo Card". Save it. Refresh. See it in grid. Edit it.
+3.  **Settings**: Load page. Verify all checks are Green. Click "Test LINE Connection", see Bot Name.

@@ -1,0 +1,140 @@
+# LINE OA Admin Panel - Phase 1 Implementation
+
+## Phase 1: Setup & Architecture
+
+- [x] Initialize Next.js 14 project with TypeScript, Tailwind, ESLint
+- [x] Install and configure Shadcn/ui
+- [x] Create folder structure as per implementation plan
+- [x] Set up Prisma schema with PostgreSQL
+- [ ] Run database migration (Requires active DB connection - User to execute `npx prisma migrate dev`)
+- [x] Create basic layout components:
+  - [x] [src/components/layout/sidebar.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/layout/sidebar.tsx)
+  - [x] [src/components/layout/header.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/layout/header.tsx)
+  - [x] [src/components/layout/mobile-nav.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/layout/mobile-nav.tsx)
+- [x] Set up dashboard layout with sidebar and header
+- [x] Create environment variables template (.env.example)
+
+## Phase 2: Authentication & Dashboard Core
+
+- [x] **Authentication Setup (NextAuth.js)**
+  - [x] Configure [auth.ts](file:///d:/Workshop/line_oa/admin_panel/src/auth.ts) with PrismaAdapter and CredentialsProvider
+  - [x] Implement [src/app/api/auth/[...nextauth]/route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/auth/%5B...nextauth%5D/route.ts)
+  - [x] Create [middleware.ts](file:///d:/Workshop/line_oa/admin_panel/src/middleware.ts) for route protection
+  - [x] Implement password hashing with bcryptjs
+- [x] **Database Seeding**
+  - [x] Create [prisma/seed.ts](file:///d:/Workshop/line_oa/admin_panel/prisma/seed.ts) for Admin Account
+  - [ ] Run `npx prisma db seed` (requires DB setup)
+- [x] **Login Page**
+  - [x] Build [src/app/(auth)/login/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28auth%29/login/page.tsx)
+  - [x] Implement form validation with Zod
+  - [x] Connect to NextAuth for login
+- [x] **Dashboard Home UI**
+  - [x] Build [src/app/(dashboard)/dashboard/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/dashboard/page.tsx)
+  - [x] Create [StatsCard](file:///d:/Workshop/line_oa/admin_panel/src/components/dashboard/stats-card.tsx#12-39) component
+  - [x] Create placeholder [MessageChart](file:///d:/Workshop/line_oa/admin_panel/src/components/dashboard/message-chart.tsx#10-56) component
+  - [x] Integrate User info into Sidebar/Header
+- [x] **Prisma 7 Configuration**
+  - [x] Configure PostgreSQL driver adapter for Prisma 7 compatibility
+
+## Phase 3: LINE Integration & Chat System
+
+- [x] **LINE Library & Config**
+  - [x] Install `@line/bot-sdk`
+  - [x] Create [src/lib/line.ts](file:///d:/Workshop/line_oa/admin_panel/src/lib/line.ts) with LINE Client instance
+- [x] **Webhook Handler**
+  - [x] Implement [src/app/api/webhook/line/route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts)
+  - [x] Validate `x-line-signature` header
+  - [x] Handle [follow](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts#126-136) event (create/update Customer)
+  - [x] Handle `unfollow` event (update Customer status)
+  - [x] Handle `message` event (create Message, update Conversation)
+- [x] **Chat Actions**
+  - [x] [getConversations()](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#7-39) - Fetch conversation list
+  - [x] [getMessages(customerId)](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#40-59) - Fetch chat history
+  - [x] [sendMessage(customerId, text)](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#75-138) - Send via LINE API
+- [x] **Chat UI**
+  - [x] Create [src/components/chat/chat-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/chat-list.tsx)
+  - [x] Create [src/app/(dashboard)/chat/layout.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/chat/layout.tsx)
+  - [x] Create [src/app/(dashboard)/chat/[customerId]/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/chat/%5BcustomerId%5D/page.tsx)
+  - [x] Implement [MessageInput](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-input.tsx#13-55) component
+
+## Phase 4: Broadcast System with Queue
+
+- [x] **Infrastructure Setup**
+  - [x] Install `bullmq` and `ioredis`
+  - [x] Create [src/lib/redis.ts](file:///d:/Workshop/line_oa/admin_panel/src/lib/redis.ts) (Redis connection)
+  - [x] Create [src/lib/queue.ts](file:///d:/Workshop/line_oa/admin_panel/src/lib/queue.ts) (Queue definition)
+- [x] **Worker Implementation**
+  - [x] Create [src/workers/run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts) (Standalone worker script)
+  - [x] Implement broadcast logic (fetch customers, rate limit, send LINE msg)
+  - [x] Add `send-broadcast` job processor
+- [x] **Server Actions**
+  - [x] Create [src/actions/broadcast.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts)
+  - [x] Implement [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-62) (add job to queue, create DB log)
+- [x] **Broadcast UI**
+  - [x] Create [src/app/(dashboard)/broadcast/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/broadcast/page.tsx)
+  - [x] Implement Broadcast Form (Message/Target)
+  - [x] Display Recent Broadcasts list
+
+## Upcoming Phases (Not Started)
+
+## Phase 5: Automation & Product Catalog
+
+- [x] **Product Management (/products)**
+  - [x] Create [src/actions/product.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/product.actions.ts) (CRUD)
+  - [x] Create [src/components/products/product-table.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/products/product-table.tsx)
+  - [x] Create [src/components/products/product-dialog.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/products/product-dialog.tsx) (Add/Edit Modal)
+  - [x] Create [src/app/(dashboard)/products/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/products/page.tsx)
+- [x] **Automation Settings (/automation)**
+  - [x] Create [src/app/(dashboard)/automation/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/automation/page.tsx) (Tabs: Welcome / Keywords)
+  - [x] Implement Welcome Message settings (Tab 1)
+  - [x] Implement Keyword Reply CRUD (Tab 2)
+- [x] **Webhook Intelligence**
+  - [x] Update [route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts) to handle "Follow" event (Send Welcome Message)
+  - [x] Update [route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts) to handle "Message" event (Check Keywords -> Auto-reply)
+
+## Phase 6: Rich Menu & Advanced Broadcast
+
+- [x] **Rich Menu Management (/rich-menu)**
+  - [x] Create [src/actions/rich-menu.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts) (LINE API wrappers)
+  - [x] Create [src/components/rich-menu/rich-menu-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/rich-menu/rich-menu-list.tsx)
+  - [x] Create [src/components/rich-menu/create-rich-menu-dialog.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/rich-menu/create-rich-menu-dialog.tsx)
+  - [x] Create [src/app/(dashboard)/rich-menu/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/rich-menu/page.tsx)
+  - [x] Implement "Set as Default" and "Link to User" logic
+- [x] **Advanced Broadcast Upgrade**
+  - [x] Update [broadcast-form.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx) to support Flex Messages
+  - [x] Implement "Insert Product Card" modal (Generates Flex JSON)
+  - [x] Update [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-62) action to handle Flex messages
+- [x] **Customer Profile Update**
+  - [x] Add Rich Menu selector in Customer Detail sidebar
+
+## Phase 7: Gap Filling & Polish
+
+- [x] **Broadcast Scheduling**
+  - [x] Add Date/Time Picker to [BroadcastForm](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#45-368)
+  - [x] Update [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-62) to calculate delay
+  - [x] Pass `delay` option to BullMQ job
+- [x] **Tag Management**
+  - [x] Add [addTag](file:///d:/Workshop/line_oa/admin_panel/src/actions/tag.actions.ts#7-29) and [removeTag](file:///d:/Workshop/line_oa/admin_panel/src/actions/tag.actions.ts#30-60) Server Actions
+  - [x] Add Tags UI section to [CustomerProfileSheet](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/customer-profile-sheet.tsx#39-159) (Badges + Input)
+- [x] **Real Dashboard Analytics**
+  - [x] Implement [getDashboardStats](file:///d:/Workshop/line_oa/admin_panel/src/actions/dashboard.actions.ts#6-35) Server Action (Prisma queries)
+  - [x] Replace mock data in [dashboard/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/dashboard/page.tsx)
+  - [x] Implement `getChartData` (Group message logs by date)
+- [x] **Flex Message Preview**
+  - [x] Add "Send Test" button to [BroadcastForm](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#45-368)
+  - [x] Implement server action to send test message to current admin (or input-defined user)
+
+## Phase 8: Activate Missing UI Pages
+
+- [x] **Customers Page (/customers)**
+  - [x] Implement [src/actions/customer.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/customer.actions.ts) (getAll, block/unblock)
+  - [x] Create [src/app/(dashboard)/customers/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/customers/page.tsx) (Table View)
+  - [x] Add "Block/Unblock" and "View Chat" actions
+- [x] **Flex Builder Page (/flex-builder)**
+  - [x] Update Prisma Schema: Add `FlexTemplate` model
+  - [x] Run Migration: `npx prisma migrate dev`
+  - [x] Implement [src/actions/flex-template.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/flex-template.actions.ts) (CRUD)
+  - [x] Create [src/app/(dashboard)/flex-builder/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/flex-builder/page.tsx) (Grid + Editor)
+- [x] **Settings Page (/settings)**
+  - [x] Implement [src/actions/settings.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/settings.actions.ts) (Health Check, Line Test)
+  - [x] Create [src/app/(dashboard)/settings/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/settings/page.tsx) (Status Cards)
