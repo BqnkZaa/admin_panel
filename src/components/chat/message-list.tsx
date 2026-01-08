@@ -155,7 +155,7 @@ function MessageBubble({
                 {(contentType === "flex" || contentType === "FLEX") && (
                     <div className="text-sm">
                         <span className="opacity-70 font-semibold text-xs">[Flex Message]</span>
-                        <p className="mt-1">{(content as any).altText || "กดเพื่อดูรายละเอียด"}</p>
+                        <p className="mt-1">{(content as { altText?: string })?.altText || "กดเพื่อดูรายละเอียด"}</p>
                     </div>
                 )}
             </div>
