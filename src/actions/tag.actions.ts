@@ -57,3 +57,17 @@ export async function removeTag(customerId: string, tagToRemove: string) {
         return { success: false, error: "Failed to remove tag" };
     }
 }
+
+export async function getAllUniqueTags() {
+    try {
+        const result = await prisma.$queryRaw<{ tag: string }[]>`
+            SELECT DISTINCT unnest(tags) as tag FROM "Customer"
+            ORDER BY tag ASC
+        `;
+        const tags = result.map(r => r.tag);
+        return { success: true, tags };
+    } catch (error) {
+        console.error("Error fetching unique tags:", error);
+        return { success: false, tags: [], error: "Failed to fetch tags" };
+    }
+}

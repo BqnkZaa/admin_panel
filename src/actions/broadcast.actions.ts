@@ -7,11 +7,41 @@ import { revalidatePath } from "next/cache";
 import { BroadcastTarget, Prisma } from "@prisma/client";
 import { lineClient } from "@/lib/line";
 
+export async function calculateRecipientCount(
+    targetType: BroadcastTarget,
+    targetIds?: string[]
+) {
+    try {
+        const query: Prisma.CustomerWhereInput = { isFollowing: true };
+
+        if (targetType === "TAG" && targetIds && targetIds.length > 0) {
+            query.tags = { hasSome: targetIds };
+        } else if (targetType === "RICH_MENU" && targetIds && targetIds.length > 0) {
+            query.richMenuAliasId = { in: targetIds };
+        } else if (targetType === "SPECIFIC_USERS" && targetIds && targetIds.length > 0) {
+            // For specific users, we are passing LineUserIDs.
+            // However, if we store internal Customer IDs, we'd check `id`.
+            // Assuming targetIds contains Line User IDs for now as per UI:
+            query.lineUserId = { in: targetIds };
+        }
+
+        // If targetConfig is used for more complex logic (e.g. JSON), handle it here.
+        // For now, we rely on targetIds for simple TAG/RICH_MENU/USER selection.
+
+        const count = await prisma.customer.count({ where: query });
+        return { success: true, count };
+    } catch (error) {
+        console.error("Error calculating recipient count:", error);
+        return { success: false, count: 0, error: "Failed to calculate count" };
+    }
+}
+
 export async function sendBroadcast(data: {
     name: string;
     messageContent: unknown;
     targetType: BroadcastTarget;
     targetIds?: string[];
+    // targetConfig?: unknown; // Removed unused
     scheduledAt?: Date;
 }) {
     const session = await auth();
@@ -37,6 +67,7 @@ export async function sendBroadcast(data: {
                 content: data.messageContent as Prisma.InputJsonValue,
                 targetType: data.targetType,
                 targetIds: data.targetIds || [],
+                // targetConfig: data.targetConfig as Prisma.InputJsonValue,
                 status: status,
                 scheduledAt: scheduledTime,
                 createdById: session.user.id,
@@ -49,6 +80,7 @@ export async function sendBroadcast(data: {
             messageContent: data.messageContent,
             targetType: data.targetType,
             targetIds: data.targetIds || [],
+            // targetConfig: data.targetConfig,
             segment: "all",
         }, {
             delay: delay,

@@ -1,45 +1,103 @@
-# Welcome Message Upgrade Plan
+# Broadcast Feature Upgrade Implementation Plan
 
-## Goal
-Upgrade the Welcome Message feature to support **Text** and **Flex Message** types with a toggle UI, matching the reference design.
+## Goal Description
+Upgrade the Broadcast feature to match the "Pro" UI, enabling advanced targeting (Tags, Specific Users), real-time recipient counting, and support for Image messages. This involves full-stack updates from the database schema to the UI and background worker.
+
+## User Review Required
+> [!IMPORTANT]
+> This upgrade involves a database schema change. A migration will be required.
 
 ## Proposed Changes
 
-### 1. Database Schema ([prisma/schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma))
-- Modify [WelcomeMessage](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#10-21) model:
-    - Ensure `messageType` is used (or map `type` request to it).
-    - Add `altText` (String?) for Flex messages.
-    - **Note**: EXISTING `content` (Json) will be preferred over a new `message` String field to maintain consistency with `AutoReplyKeyword` and allow structured data storage. The UI will handle stringifying/parsing.
+### Database ([prisma/schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma))
+- Modify `BroadcastTarget` enum:
+    - Add `TAG`
+    - Add `SPECIFIC_USERS`
+- Modify [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#88-104) model:
+    - Add `name` is already present. (Wait, checking schema...)
+    - Schema has `name String`. Use this for "Broadcast Title".
+    - `content` is [Json](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#83-93). Can hold image data.
+    - `targetIds` is `String[]`. Can hold Tag IDs or User IDs.
+    - **Wait, `targetConfig` was requested.**
+    - User requested: `Add targetConfig (Json?)`.
+    - Current schema has `targetIds String[]`.
+    - If I use `targetIds`, it might be enough for `TAG` (list of tag names/ids) and `SPECIFIC_USERS` (list of user IDs).
+    - `RICH_MENU` targeting uses `targetIds` currently ?
+    - Let's check [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts): `if (targetType === "RICH_MENU" && targetIds.length > 0) ... richMenuAliasId: { in: targetIds }`.
+    - So `targetIds` works for a list of strings.
+    - For `TAG`, we can store tag names in `targetIds`.
+    - For `SPECIFIC_USERS`, we can store lineUserIds in `targetIds`.
+    - **However**, the user explicitly asked for `targetConfig (Json?)`.
+    - Reason: "To store details like `["tag_vip", "tag_new"]` or specific user IDs."
+    - If `targetIds` (String[]) is already there, maybe `targetConfig` is redundant?
+    - `targetIds` is `String[]`.
+    - If we follow the user request strictly, we add `targetConfig`.
+    - But `targetIds` is cleaner for simple arrays.
+    - Let's look at `BroadcastLog` user mentioned.
+    - Schema has [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#88-104) model. It does not have `BroadcastLog`. I assume "BroadcastLog" meant the [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#88-104) model which serves as a log/record.
+    - User asked: `Add title (String?)`. Schema has `name String`. I will use `name`.
+    - User asked: `Add targetConfig (Json?)`.
+    - If I use `targetIds` for tags, it works.
+    - I'll stick to `targetIds` if possible to avoid schema bloat, but if the user *really* wants `targetConfig` for future proofing (complex objects), I should consider it.
+    - But `targetIds` is `String[]`.
+    - I will **add `targetConfig`** as requested to be safe and strictly follow instructions, maybe they want to store more than just IDs (e.g. boolean logic).
+    - Actually, `targetIds` is `String[]`. If we want to store `AND` vs `OR` logic for tags, we might need JSON.
+    - I'll add `targetConfig` (Json) and `title` (Wait, `name` exists. I'll check if `name` is what they meant. "Broadcast Title" input -> `name`. I'll assume `name` is enough, but user said "Add title (String?)". I'll double check if I should rename or alias. The current `name` is used. I'll use `name` for "Broadcast Title").
 
-    ```prisma
-    model WelcomeMessage {
-      // ... existing fields
-      messageType MessageType @default(TEXT)
-      content     Json
-      altText     String? // [NEW] Use for Flex alt text
-      // ...
-    }
-    ```
+### Server Actions
+#### [src/actions/broadcast.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts)
+- **[NEW]** `calculateRecipientCount(targetType, targetConfig)`
+    - Queries Prisma `count()` based on targeting.
+    - Returns number of matching customers.
+- **[MODIFY]** [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-65)
+    - Update signature to accept `targetConfig` (or map to it).
+    - Support `messageType` check (Image vs Text vs Flex).
 
-### 2. UI Updates ([src/components/automation/welcome-settings.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/automation/welcome-settings.tsx))
-- Refactor the component to match the "Reference Image" layout:
-    - **Header**: "Enable Welcome Message" switch.
-    - **Message Type**: Big Radio Cards (Text vs Flex).
-    - **Editor**:
-        - **Text**: Simple Textarea.
-        - **Flex**: JSON Editor (Textarea monospace) + "Alt Text" input + "Load Template" button (Simulated or actual if templates exist).
+### UI Components
+#### [src/components/broadcast/broadcast-form.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx)
+- **[MODIFY]** [BroadcastForm](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#45-421)
+    - Top-level "Broadcast Name" input (maps to `name`).
+    - Message Type Selection: Text, Image, Flex.
+    - Image Input: URL input + Preview.
+    - Targeting UI:
+        - Grid/Card selection.
+        - `TAG`: Multi-select from `Tag` model.
+        - `SPECIFIC_USERS`: Text input (comma separated) or better UI? User said "Simple input for User ID (for now)".
+    - Recipient Counter:
+        - `useEffect` hook listening to `targetType` & config changes.
+        - Calls `calculateRecipientCount`.
+        - Displays count in blue bar.
 
-### 3. Server Actions (`src/actions/welcome.actions.ts`)
-- Update [saveWelcomeMessage](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#22-55) to accept `altText` and handle `messageType`.
+### Worker
+#### [src/workers/run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
+- **[MODIFY]** Broadcast processing logic.
+    - Handle `TAG` target: `prisma.customer.findMany({ where: { tags: { hasSome: targetConfig } } })` (or similar array filter).
+    - Handle `IMAGE` message construction for LINE API.
 
-### 4. Webhook Logic ([src/app/api/webhook/line/route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts))
-- Update [handleFollowEvent](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts#70-125):
-    - Fetch [WelcomeMessage](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#10-21).
-    - Check `messageType`.
-    - If `FLEX`: usage `lineClient.pushMessage` with `{ type: 'flex', altText: wm.altText, contents: wm.content }`.
-    - If `TEXT`: usage `lineClient.pushMessage` with `{ type: 'text', text: wm.content.text }`.
+## Verification Plan
 
-## Verification
-- Run migration.
-- Test UI: Toggle types, save, reload.
-- Test Webhook: Follow the bot, verify correct message type and content is received.
+### Automated Tests
+- None existing for UI interactions.
+- Will rely on manual verification.
+
+### Manual Verification
+1.  **Database Migration**: Run `npx prisma migrate dev --name upgrade_broadcast` and check DB schema.
+2.  **UI Check**:
+    - Go to `/broadcast`.
+    - Check "Broadcast Name" input.
+    - Check "Image" option is available.
+    - Check "Tags" targeting option.
+    - Select a tag -> Check if "Sending to X users" bar updates.
+3.  **Functional Test**:
+    - **Tag Broadcast**:
+        - Assign a tag to a test user in DB (or via UI if available).
+        - Send a broadcast to that tag.
+        - Verify test user receives it.
+    - **Image Broadcast**:
+        - Send an image broadcast.
+        - Verify it renders as image on LINE/Simulator.
+    - **Specific User**:
+        - Send to specific Line User ID.
+        - Verify receipt.
+4.  **Worker Log**:
+    - Check worker console logs for proper count and successful send.

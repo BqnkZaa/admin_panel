@@ -25,17 +25,28 @@ const worker = new Worker(
             // 2. Fetch customers
             // TODO: Handle segment filtering if implemented later
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const targetType = (job.data.targetType) || "ALL"; // Fallback for old jobs
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const targetIds = (job.data.targetIds) || [];
 
-            let query = {};
+            let query: Prisma.CustomerWhereInput = {};
+
             if (targetType === "ALL") {
                 query = { isFollowing: true };
             } else if (targetType === "RICH_MENU" && targetIds.length > 0) {
                 query = {
                     isFollowing: true,
                     richMenuAliasId: { in: targetIds }
+                };
+            } else if (targetType === "TAG" && targetIds.length > 0) {
+                query = {
+                    isFollowing: true,
+                    tags: { hasSome: targetIds }
+                };
+            } else if (targetType === "SPECIFIC_USERS" && targetIds.length > 0) {
+                query = {
+                    lineUserId: { in: targetIds }
                 };
             }
 

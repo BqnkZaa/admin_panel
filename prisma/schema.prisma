@@ -165,6 +165,7 @@ model Broadcast {
   content         Json
   targetType      BroadcastTarget
   targetIds       String[]
+  targetConfig    Json?
   status          BroadcastStatus @default(DRAFT)
   scheduledAt     DateTime?
   startedAt       DateTime?
@@ -185,6 +186,7 @@ enum BroadcastTarget {
   SELECTED
   TAG
   RICH_MENU
+  SPECIFIC_USERS
 }
 
 enum BroadcastStatus {
