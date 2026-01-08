@@ -1,45 +1,47 @@
-# Auto-Reply Upgrade Walkthrough
+# Broadcast Feature Upgrade Walkthrough
 
-The Auto-Reply system has been upgraded to a "Pro" rule engine. Here's what's new and how to use it.
+I have successfully upgraded the Broadcast feature to support advanced targeting (Tags, Specific Users) and Image messages, matching the Pro UI requirements.
 
-## New Features
+## Changes Implemented
 
-### 1. Advanced Matching
-- **Exact Match**: Matches the keyword exactly as typed.
-- **Regex Match**: Use JavaScript Regular Expressions for powerful pattern matching (e.g., `^hello.*` matches "hello", "hello world", etc.).
+### 1. Database Schema
+- **BroadcastTarget Enum**: Added `TAG` and `SPECIFIC_USERS`.
+- **Broadcast Model**: Added `targetConfig` (JSON) to support detailed targeting data.
+- **Migration**: Applied `upgrade_broadcast` migration.
 
-### 2. Rich Response Types
-- **Text**: Standard text replies.
-- **Flex Message**: Send fully customizable Flex Messages using JSON payloads.
-  - Requires `Alt Text` (displayed in notifications).
-  - Use the [LINE Flex Message Simulator](https://developers.line.biz/flex-simulator/) to design and copy the JSON.
+### 2. UI Updates ([BroadcastForm](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#48-586))
+- **Broadcast Name**: Added top-level input for internal tracking.
+- **Message Types**: Added "Image" tab with URL input and preview.
+- **Targeting**:
+    - **Tags**: Multi-select interface fetching real tags from the database.
+    - **Specific Users**: Text area for comma-separated Line User IDs.
+    - **Rich Menu**: Existing functionality preserved and styled.
+- **Recipient Counter**: Added a real-time "Blue Info Bar" that calculates the estimated audience size based on selection.
 
-### 3. Custom Sender Identity
-- Override the default bot name and icon for specific rules.
-- Great for creating "personas" (e.g., "Support Agent" or "Sales Bot").
+### 3. Backend Logic (`Server Actions` & `Worker`)
+- **[calculateRecipientCount](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-39)**: New action to query the database and return audience size for the UI counter.
+- **Worker ([run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts))**: Updated to handle `TAG` and `SPECIFIC_USERS` queries and correctly process `IMAGE` message types.
 
-### 4. Quick Replies
-- Add up to 13 Quick Reply buttons to any auto-response.
-- Supports [Message](file:///d:/Workshop/line_oa/admin_panel/src/actions/automation.actions.ts#10-21), `Link (URI)`, and `Postback` actions.
+## How to Verify
 
-### 5. Auto-Tagging
-- Automatically assign tags (e.g., "VIP", "Interested") to any user who triggers a specific rule.
+### 1. Test "Tags" Targeting
+1.  Go to **Broadcast** page.
+2.  Select **Target: Tags**.
+3.  Choose a tag (e.g., "VIP").
+4.  Observe the "Sending to X users" bar update.
+5.  Send the broadcast and verify that users with that tag receive it.
 
-## How to Test
+### 2. Test "Image" Broadcast
+1.  Select **Message Type: Image**.
+2.  Enter a valid HTTPS image URL (e.g., `https://via.placeholder.com/1024`).
+3.  Check the preview image.
+4.  Send and verify the image is received on LINE.
 
-1.  **Restart Server**: Ensure the new schema and server actions are loaded (`npm run dev`).
-2.  **Create a Rule**:
-    - Go to **Automation > Auto-Reply**.
-    - Click **Add Automation Rule**.
-    - **Trigger**: Set Keyword `promo`, Match Type `REGEX`.
-    - **Response**: Select `FLEX`, paste valid Flex JSON. Add a Quick Reply "Buy Now".
-    - **Actions**: Add tag `Promo-Interested`.
-    - Click **Create**.
-3.  **Send Message**:
-    - Open your LINE bot.
-    - Send "promo" or "promotion".
-    - **Verify**: You receive the Flex Message, the sender might be custom (if set), and you see the Quick Reply. Check **Users** to see if you have the tag.
+### 3. Test "Specific Users"
+1.  Select **Target: Specific User**.
+2.  Enter your own Line User ID (found in [Customer](file:///d:/Workshop/line_oa/admin_panel/src/actions/customer.actions.ts#7-35) table or via the "Test Send" dialog helper).
+3.  Send and verify you receive the message.
 
-## Troubleshooting
-- **Migration Error**: If the app fails to start, run `npx prisma migrate dev` again.
-- **Flex Message Not Sending**: Ensure the JSON is valid. Invalid JSON will cause the message to fail silently or log an error in the console.
+## Next Steps
+- Monitor the background worker logs in your hosting provider (Render) to ensure jobs are processing correctly.
+- You can now create more granular segments by adding tags to customers via the Chat or Automation rules.

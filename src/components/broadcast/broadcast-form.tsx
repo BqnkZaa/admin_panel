@@ -17,20 +17,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-    DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { sendBroadcast, sendTestBroadcast, calculateRecipientCount } from "@/actions/broadcast.actions";
+import { sendBroadcast, calculateRecipientCount } from "@/actions/broadcast.actions";
 import { getRichMenus } from "@/actions/rich-menu.actions";
 import { getAllUniqueTags } from "@/actions/tag.actions";
-import { Loader2, Send, CheckCircle, AlertCircle, Code, Calendar as CalendarIcon, Clock, Users, Tag, Image as ImageIcon, MessageSquare, Menu, UserCircle } from "lucide-react";
+import { Loader2, Send, CheckCircle, AlertCircle, Code, Calendar as CalendarIcon, Clock, Users, Tag, Image as ImageIcon, Database, Hash, Layers, Users2, UserPlus, User, Sparkles } from "lucide-react";
 import { ProductPickerDialog } from "@/components/broadcast/product-picker-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
@@ -72,11 +62,6 @@ export default function BroadcastForm() {
     const [isScheduled, setIsScheduled] = useState(false);
     const [scheduledDate, setScheduledDate] = useState<Date | undefined>(undefined);
     const [scheduledTime, setScheduledTime] = useState("09:00");
-
-    // Test Dialog State
-    const [testUserId, setTestUserId] = useState("");
-    const [isTestDialogOpen, setIsTestDialogOpen] = useState(false);
-    const [isTestPending, startTestTransition] = useTransition();
 
     // Form Submission State
     const [isPending, startTransition] = useTransition();
@@ -223,26 +208,6 @@ export default function BroadcastForm() {
         });
     };
 
-    const handleTestSend = () => {
-        if (!testUserId.trim()) return;
-        const content = getMessageContent();
-        if (!content) return;
-
-        startTestTransition(async () => {
-            const result = await sendTestBroadcast({
-                messageContent: content,
-                targetUserId: testUserId.trim(),
-            });
-
-            if (result.success) {
-                toast({ title: "Test sent successfully" });
-                setIsTestDialogOpen(false);
-            } else {
-                toast({ title: "Failed to send test", description: result.error, variant: "destructive" });
-            }
-        });
-    };
-
     // Validation
     const isContentValid =
         (messageType === "text" && textMessage.trim().length > 0) ||
@@ -259,62 +224,83 @@ export default function BroadcastForm() {
 
 
     return (
-        <Card className="h-full border-0 shadow-none">
+        <Card className="h-full border-0 shadow-none bg-transparent">
             <CardHeader className="px-0 pt-0">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className="text-base font-semibold">ชื่อ Broadcast (สำหรับการจัดการภายใน)</Label>
+                        <Label className="text-base font-semibold text-slate-700">หัวข้อ (สำหรับบันทึก)</Label>
                         <Input
-                            placeholder="ตัวอย่าง: โปรโมชั่นปีใหม่ 2026 #1"
+                            placeholder="เช่น โปรโมชั่นเดือนธันวาคม"
                             value={broadcastName}
                             onChange={(e) => setBroadcastName(e.target.value)}
-                            className="text-lg py-6"
+                            className="text-base py-5 bg-white border-slate-200 focus-visible:ring-emerald-500"
                         />
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="px-0 space-y-6">
 
-                {/* 1. Message Content Section */}
-                <div className="space-y-4 border rounded-xl p-4 bg-white/50">
-                    <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare className="w-5 h-5 text-blue-600" />
-                        <h3 className="font-semibold text-lg">เนื้อหาข้อความ</h3>
+                {/* 1. Message Type Selector */}
+                <div className="space-y-3">
+                    <Label className="text-base font-semibold text-slate-700">ประเภทข้อความ</Label>
+                    <div className="flex flex-wrap gap-3">
+                        <MessageTypeOption
+                            active={messageType === "text"}
+                            onClick={() => setMessageType("text")}
+                            icon={<span className="font-serif font-bold text-lg">A</span>}
+                            label="ข้อความ"
+                        />
+                        <MessageTypeOption
+                            active={messageType === "image"}
+                            onClick={() => setMessageType("image")}
+                            icon={<ImageIcon className="w-5 h-5" />}
+                            label="รูปภาพ"
+                        />
+                        <MessageTypeOption
+                            active={messageType === "flex"}
+                            onClick={() => setMessageType("flex")}
+                            icon={<Code className="w-5 h-5" />}
+                            label="Flex Message"
+                        />
                     </div>
+                </div>
 
-                    <Tabs value={messageType} onValueChange={setMessageType} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 mb-4">
-                            <TabsTrigger value="text" className="gap-2"><span className="font-serif font-bold">A</span> ข้อความ</TabsTrigger>
-                            <TabsTrigger value="image" className="gap-2"><ImageIcon className="w-4 h-4" /> รูปภาพ</TabsTrigger>
-                            <TabsTrigger value="flex" className="gap-2"><Code className="w-4 h-4" /> Flex Message</TabsTrigger>
-                        </TabsList>
-
-                        <TabsContent value="text" className="space-y-2 mt-0">
+                {/* Content Area */}
+                <div className="bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+                    {messageType === "text" && (
+                        <div className="p-3 space-y-2">
+                            <div className="flex justify-between items-center mb-1">
+                                <Label className="text-slate-700 font-medium">ข้อความ</Label>
+                                <div className="text-xs text-blue-600 cursor-pointer flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3" /> ใช้ AI ช่วยคิด
+                                </div>
+                            </div>
                             <Textarea
                                 placeholder="พิมพ์ข้อความที่ต้องการส่ง..."
-                                className="min-h-[200px] text-base resize-none"
+                                className="min-h-[200px] text-base resize-none border-0 focus-visible:ring-0 p-0 shadow-none"
                                 value={textMessage}
                                 onChange={(e) => setTextMessage(e.target.value)}
                             />
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                                <span>สามารถใส่ Emoji ได้</span>
+                            <div className="pt-2 border-t flex justify-between text-xs text-muted-foreground">
+                                <span>รองรับ Emoji และข้อความยาวสูงสุด 2,000 ตัวอักษร</span>
                                 <span>{textMessage.length}/2000</span>
                             </div>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="image" className="space-y-4 mt-0">
+                    {messageType === "image" && (
+                        <div className="p-4 space-y-4">
                             <div className="space-y-2">
                                 <Label>Image URL (ต้องเป็น HTTPS)</Label>
                                 <Input
                                     placeholder="https://example.com/image.jpg"
                                     value={imageUrl}
                                     onChange={(e) => setImageUrl(e.target.value)}
+                                    className="bg-slate-50"
                                 />
-                                <p className="text-xs text-muted-foreground">ขนาดไฟล์สูงสุด 10MB, รองรับ JPEG และ PNG</p>
                             </div>
-
                             {imageUrl && (
-                                <div className="border rounded-lg p-2 bg-slate-50 flex justify-center">
+                                <div className="flex justify-center bg-slate-100 rounded-lg p-4">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={imageUrl}
@@ -324,29 +310,35 @@ export default function BroadcastForm() {
                                     />
                                 </div>
                             )}
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="flex" className="space-y-4 mt-0">
+                    {messageType === "flex" && (
+                        <div className="p-4 space-y-4">
+                            <div className="flex justify-between items-center">
+                                <Label>Flex Message JSON</Label>
+                                <div className="flex gap-2">
+                                    <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => {
+                                        const parsed = validateJson();
+                                        if (parsed) setFlexJson(JSON.stringify(parsed, null, 2));
+                                    }}>
+                                        Reformat
+                                    </Button>
+                                    <ProductPickerDialog onProductSelect={handleProductSelect} />
+                                </div>
+                            </div>
                             <div className="space-y-2">
-                                <Label>Alt Text</Label>
+                                <Label className="text-xs text-muted-foreground">Alt Text (ข้อความแทนรูปภาพ)</Label>
                                 <Input
                                     value={altText}
                                     onChange={(e) => setAltText(e.target.value)}
-                                    placeholder="ข้อความที่จะแสดงในการแจ้งเตือน"
+                                    placeholder="ท่านได้รับข้อความใหม่"
+                                    className="bg-slate-50"
                                 />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => {
-                                    const parsed = validateJson();
-                                    if (parsed) setFlexJson(JSON.stringify(parsed, null, 2));
-                                }}>
-                                    <Code className="w-4 h-4 mr-1" /> Reformat
-                                </Button>
-                                <ProductPickerDialog onProductSelect={handleProductSelect} />
                             </div>
                             <Textarea
                                 placeholder='{ "type": "bubble", ... }'
-                                className="min-h-[200px] font-mono text-xs"
+                                className="min-h-[200px] font-mono text-xs bg-slate-50 border-slate-200"
                                 value={flexJson}
                                 onChange={(e) => {
                                     setFlexJson(e.target.value);
@@ -359,54 +351,69 @@ export default function BroadcastForm() {
                                     <AlertDescription>{jsonError}</AlertDescription>
                                 </Alert>
                             )}
-                        </TabsContent>
-                    </Tabs>
+                        </div>
+                    )}
                 </div>
 
-
                 {/* 2. Targeting Section */}
-                <div className="space-y-4 border rounded-xl p-4 bg-white/50">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Users className="w-5 h-5 text-indigo-600" />
-                        <h3 className="font-semibold text-lg">กลุ่มเป้าหมาย</h3>
+                <div className="space-y-3">
+                    <Label className="text-base font-semibold text-slate-700">ส่งถึง</Label>
+
+                    <div className="space-y-3">
+                        {/* Row 1 */}
+                        <div className="flex flex-wrap gap-2">
+                            <TargetOption
+                                active={targetType === "ALL"}
+                                onClick={() => setTargetType("ALL")}
+                                icon={<Database className="w-4 h-4" />}
+                                label="ในฐานข้อมูล"
+                            />
+                            <TargetOptionDisabled
+                                icon={<Users className="w-4 h-4" />}
+                                label="เพื่อนทั้งหมด"
+                            />
+                            <TargetOptionDisabled
+                                icon={<Hash className="w-4 h-4" />}
+                                label="จำกัดจำนวน"
+                            />
+                            <TargetOptionDisabled
+                                icon={<Layers className="w-4 h-4" />}
+                                label="Segment"
+                            />
+                        </div>
+
+                        {/* Row 2 */}
+                        <div className="flex flex-wrap gap-2">
+                            <TargetOption
+                                active={targetType === "TAG"}
+                                onClick={() => setTargetType("TAG")}
+                                icon={<Tag className="w-4 h-4" />}
+                                label="Tag"
+                            />
+                            <TargetOption
+                                active={targetType === "RICH_MENU"}
+                                onClick={() => setTargetType("RICH_MENU")}
+                                icon={<Users2 className="w-4 h-4" />}
+                                label="กลุ่ม"
+                            />
+                            <TargetOption
+                                active={targetType === "SPECIFIC_USERS"} // Using this for "Manual"
+                                onClick={() => setTargetType("SPECIFIC_USERS")}
+                                icon={<UserPlus className="w-4 h-4" />}
+                                label="เลือกเอง"
+                            />
+                            <TargetOptionDisabled
+                                icon={<User className="w-4 h-4" />}
+                                label="คนเดียว"
+                            />
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <TargetOption
-                            active={targetType === "ALL"}
-                            onClick={() => setTargetType("ALL")}
-                            icon={<Users className="w-6 h-6" />}
-                            label="ลูกค้าทั้งหมด"
-                        />
-                        <TargetOption
-                            active={targetType === "TAG"}
-                            onClick={() => setTargetType("TAG")}
-                            icon={<Tag className="w-6 h-6" />}
-                            label="ตาม Tags"
-                        />
-                        <TargetOption
-                            active={targetType === "RICH_MENU"}
-                            onClick={() => setTargetType("RICH_MENU")}
-                            icon={<Menu className="w-6 h-6" />}
-                            label="กลุ่ม Rich Menu"
-                        />
-                        <TargetOption
-                            active={targetType === "SPECIFIC_USERS"}
-                            onClick={() => setTargetType("SPECIFIC_USERS")}
-                            icon={<UserCircle className="w-6 h-6" />}
-                            label="ระบุ User ID"
-                        />
-                    </div>
-
-                    {/* Target Specific Settings */}
-                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100 mt-2">
-                        {targetType === "ALL" && (
-                            <p className="text-sm text-slate-600">ส่งข้อความหาลูกค้าทั้งหมดที่ติดตามบัญชีไลน์นี้</p>
-                        )}
-
+                    {/* Target Specific Settings Area */}
+                    <div className="custom-target-settings mt-2">
                         {targetType === "TAG" && (
-                            <div className="space-y-3">
-                                <Label>เลือก Tags (ส่งหาคนที่มี Tag ใด Tag หนึ่ง)</Label>
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
+                                <Label>เลือก Tags</Label>
                                 {availableTags.length === 0 ? (
                                     <div className="text-sm text-yellow-600">ไม่พบ Tags ในระบบ</div>
                                 ) : (
@@ -415,7 +422,10 @@ export default function BroadcastForm() {
                                             <Badge
                                                 key={tag}
                                                 variant={selectedTags.includes(tag) ? "default" : "outline"}
-                                                className="cursor-pointer text-sm py-1 px-3 hover:bg-primary/90 hover:text-white transition-colors"
+                                                className={cn(
+                                                    "cursor-pointer text-sm py-1.5 px-3 transition-colors",
+                                                    selectedTags.includes(tag) ? "bg-emerald-500 hover:bg-emerald-600 border-transparent" : "hover:bg-slate-100"
+                                                )}
                                                 onClick={() => toggleTag(tag)}
                                             >
                                                 {tag} {selectedTags.includes(tag) && <CheckCircle className="ml-1 w-3 h-3 inline" />}
@@ -427,10 +437,10 @@ export default function BroadcastForm() {
                         )}
 
                         {targetType === "RICH_MENU" && (
-                            <div className="space-y-3">
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
                                 <Label>เลือก Rich Menu Group</Label>
                                 <Select value={selectedRichMenuAliasId} onValueChange={setSelectedRichMenuAliasId}>
-                                    <SelectTrigger className="bg-white">
+                                    <SelectTrigger className="bg-slate-50">
                                         <SelectValue placeholder="เลือก Rich Menu" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -445,143 +455,92 @@ export default function BroadcastForm() {
                         )}
 
                         {targetType === "SPECIFIC_USERS" && (
-                            <div className="space-y-3">
+                            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
                                 <Label>Line User IDs (คั่นด้วยเครื่องหมายคอมม่า)</Label>
                                 <Textarea
                                     placeholder="U1234..., U5678..."
                                     value={specificUserIds}
                                     onChange={(e) => setSpecificUserIds(e.target.value)}
-                                    className="bg-white font-mono text-xs"
+                                    className="bg-slate-50 font-mono text-xs"
                                 />
-                                <p className="text-xs text-muted-foreground">เหมาะสำหรับการเทสกลุ่มเล็กๆเฉพาะเจาะจง</p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* 3. Scheduling & Actions */}
-                <div className="flex items-center space-x-2 p-3">
-                    <Switch
-                        id="schedule-mode"
-                        checked={isScheduled}
-                        onCheckedChange={setIsScheduled}
-                    />
-                    <Label htmlFor="schedule-mode" className="cursor-pointer">ตั้งเวลาส่ง (Schedule)</Label>
-                </div>
+                {/* Counter & Action */}
+                <div className="space-y-4 pt-4">
+                    {/* Blue Info Bar */}
+                    <div className="bg-blue-50 text-blue-800 px-4 py-3 rounded-lg flex items-center gap-3 border border-blue-100">
+                        <Database className="w-5 h-5 text-blue-600" />
+                        <span className="font-medium text-base">
+                            จะส่งข้อความถึงผู้ใช้ในฐานข้อมูล <span className="text-blue-700 font-bold text-lg">{isCounting ? "..." : (recipientCount !== null ? recipientCount.toLocaleString() : "-")}</span> คน
+                        </span>
+                    </div>
 
-                {isScheduled && (
-                    <div className="flex gap-4 p-4 border rounded-xl bg-slate-50 animate-in fade-in slide-in-from-top-2">
-                        <div className="flex-1 space-y-2">
-                            <Label>วันที่</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white", !scheduledDate && "text-muted-foreground")}>
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {scheduledDate ? format(scheduledDate, "PPP", { locale: th }) : <span>เลือกวันที่</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={scheduledDate}
-                                        onSelect={setScheduledDate}
-                                        initialFocus
-                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                    {/* Schedule Toggle */}
+                    <div className="flex items-center space-x-2 py-2">
+                        <Switch
+                            id="schedule-mode"
+                            checked={isScheduled}
+                            onCheckedChange={setIsScheduled}
+                        />
+                        <Label htmlFor="schedule-mode" className="cursor-pointer text-slate-700">ตั้งเวลาส่ง (Schedule)</Label>
+                    </div>
+
+                    {isScheduled && (
+                        <div className="flex gap-4 p-4 border rounded-xl bg-white animate-in fade-in slide-in-from-top-2">
+                            <div className="flex-1 space-y-2">
+                                <Label>วันที่</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white", !scheduledDate && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {scheduledDate ? format(scheduledDate, "PPP", { locale: th }) : <span>เลือกวันที่</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={scheduledDate}
+                                            onSelect={setScheduledDate}
+                                            initialFocus
+                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="w-[150px] space-y-2">
+                                <Label>เวลา</Label>
+                                <div className="relative">
+                                    <Clock className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        type="time"
+                                        className="pl-8 bg-white"
+                                        value={scheduledTime}
+                                        onChange={(e) => setScheduledTime(e.target.value)}
                                     />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="w-[150px] space-y-2">
-                            <Label>เวลา</Label>
-                            <div className="relative">
-                                <Clock className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="time"
-                                    className="pl-8 bg-white"
-                                    value={scheduledTime}
-                                    onChange={(e) => setScheduledTime(e.target.value)}
-                                />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-
-                {/* Recipient Counter Bar */}
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 z-10 shadow-lg md:relative md:shadow-none md:border-0 md:bg-transparent md:p-0 md:static">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center">
-
-                        {/* Blue Info Bar */}
-                        <div className="hidden md:flex flex-1 bg-blue-50 text-blue-900 px-4 py-3 rounded-lg border border-blue-200 items-center gap-3">
-                            <Users className="w-5 h-5 text-blue-600" />
-                            <span className="font-medium">
-                                {isCounting ? (
-                                    <span className="flex items-center gap-2"><Loader2 className="w-3 h-3 animate-spin" /> กำลังคำนวณ...</span>
-                                ) : (
-                                    <>กำลังส่งหา <span className="text-blue-700 font-bold text-lg">{recipientCount !== null ? recipientCount.toLocaleString() : "-"}</span> คน</>
-                                )}
-                            </span>
-                        </div>
-
-                        <div className="flex gap-2 w-full md:w-auto">
-                            {/* Test Button */}
-                            <Dialog open={isTestDialogOpen} onOpenChange={setIsTestDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" className="flex-1 md:flex-none" disabled={!isContentValid}>
-                                        <Send className="mr-2 h-4 w-4" /> Test Send
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Send Test Message</DialogTitle>
-                                        <DialogDescription>
-                                            Enter a LINE User ID to receive this message immediately.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label>Target User ID</Label>
-                                            <Input
-                                                placeholder="U1234..."
-                                                value={testUserId}
-                                                onChange={(e) => setTestUserId(e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button onClick={handleTestSend} disabled={isTestPending || !testUserId.trim()}>
-                                            {isTestPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Now"}
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-
-                            <Button
-                                className="flex-[2] md:w-[200px]"
-                                onClick={handleSend}
-                                disabled={isPending || !isValid || (isScheduled && !scheduledDate)}
-                            >
-                                {isPending ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        {isScheduled ? (
-                                            <>
-                                                <Clock className="mr-2 h-4 w-4" /> Schedule Broadcast
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Send className="mr-2 h-4 w-4" /> Send Broadcast
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    </div>
+                    <Button
+                        className="w-full h-12 text-lg font-medium bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-200 transition-all hover:shadow-xl"
+                        onClick={handleSend}
+                        disabled={isPending || !isValid || (isScheduled && !scheduledDate)}
+                    >
+                        {isPending ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                กำลังดำเนินการ...
+                            </>
+                        ) : (
+                            <>
+                                <Send className="mr-2 h-5 w-5" /> ส่ง Broadcast
+                            </>
+                        )}
+                    </Button>
                 </div>
 
             </CardContent>
@@ -589,19 +548,73 @@ export default function BroadcastForm() {
     );
 }
 
-function TargetOption({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+// UI Components to match the reference
+
+function MessageTypeOption({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
     return (
-        <div
+        <button
             onClick={onClick}
             className={cn(
-                "cursor-pointer flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all hover:bg-slate-50 text-center gap-2",
-                active ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-100 bg-white text-slate-600"
+                "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium",
+                active
+                    ? "bg-emerald-50 border-emerald-500 text-emerald-700 ring-1 ring-emerald-500"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
             )}
         >
-            <div className={cn("p-2 rounded-full", active ? "bg-blue-200" : "bg-slate-100")}>
-                {icon}
+            <div className={cn(
+                "w-4 h-4 rounded-full border flex items-center justify-center",
+                active ? "border-emerald-500" : "border-slate-300"
+            )}>
+                {active && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
             </div>
-            <span className="font-medium text-sm">{label}</span>
-        </div>
+            <div className="flex items-center gap-2">
+                {icon}
+                {label}
+            </div>
+        </button>
+    );
+}
+
+function TargetOption({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+    return (
+        <button
+            onClick={onClick}
+            className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm min-w-[120px]",
+                active
+                    ? "bg-blue-50 border-blue-500 text-blue-700 ring-1 ring-blue-500"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+            )}
+        >
+            <div className={cn(
+                "w-4 h-4 rounded-full border flex items-center justify-center",
+                active ? "border-blue-500" : "border-slate-300"
+            )}>
+                {active && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+            </div>
+            <div className="flex items-center gap-2">
+                <div className={cn("p-1 rounded bg-slate-100", active && "bg-blue-100")}>
+                    {icon}
+                </div>
+                {label}
+            </div>
+        </button>
+    );
+}
+
+function TargetOptionDisabled({ icon, label }: { icon: React.ReactNode, label: string }) {
+    return (
+        <button
+            disabled
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 text-sm min-w-[120px] cursor-not-allowed opacity-75"
+        >
+            <div className="w-4 h-4 rounded-full border border-slate-200" />
+            <div className="flex items-center gap-2">
+                <div className="p-1 rounded bg-slate-100">
+                    {icon}
+                </div>
+                {label}
+            </div>
+        </button>
     );
 }
