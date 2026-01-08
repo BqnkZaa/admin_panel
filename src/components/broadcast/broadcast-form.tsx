@@ -214,7 +214,7 @@ export default function BroadcastForm() {
                                         <div className="p-2 text-sm text-muted-foreground text-center">ไม่มี Rich Menu</div>
                                     ) : (
                                         richMenus.map((menu) => (
-                                            <SelectItem key={menu.id} value={menu.richMenuId}>
+                                            <SelectItem key={menu.richMenuId} value={menu.richMenuId}>
                                                 {menu.name}
                                             </SelectItem>
                                         ))
