@@ -183,10 +183,14 @@ model Broadcast {
 
 enum BroadcastTarget {
   ALL
+  ALL_FRIENDS
   SELECTED
   TAG
   RICH_MENU
   SPECIFIC_USERS
+  LIMIT
+  SEGMENT
+  SINGLE
 }
 
 enum BroadcastStatus {

@@ -22,15 +22,48 @@ const worker = new Worker(
                 data: { status: "PROCESSING", startedAt: new Date() },
             });
 
-            // 2. Fetch customers
-            // TODO: Handle segment filtering if implemented later
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const targetType = (job.data.targetType) || "ALL"; // Fallback for old jobs
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const targetIds = (job.data.targetIds) || [];
 
+            console.log(`[Job ${job.id}] Target Type: ${targetType}, IDs: ${targetIds.length}`);
+
+            // --- SPECIAL CASE: ALL_FRIENDS (Use Broadcast API) ---
+            if (targetType === "ALL_FRIENDS") {
+                try {
+                    await lineClient.broadcast({ messages: [messageContent] });
+                    console.log(`[Job ${job.id}] Broadcast API sent successfully.`);
+
+                    // Helper: No individual tracking for Broadcast API.
+                    // Just mark as completed.
+                    await prisma.broadcast.update({
+                        where: { id: broadcastId },
+                        data: {
+                            status: "COMPLETED",
+                            completedAt: new Date(),
+                            sentCount: 0, // Unknown
+                            failedCount: 0,
+                        },
+                    });
+                    return { sentCount: 0, failedCount: 0 };
+                } catch (err: any) {
+                    console.error(`[Job ${job.id}] Broadcast API failed:`, err);
+                    await prisma.broadcast.update({
+                        where: { id: broadcastId },
+                        data: {
+                            status: "FAILED",
+                            completedAt: new Date(),
+                        },
+                    });
+                    throw err;
+                }
+            }
+            // -----------------------------------------------------
+
             let query: Prisma.CustomerWhereInput = {};
+            let take: number | undefined = undefined;
+            let orderBy: Prisma.CustomerOrderByWithRelationInput | undefined = undefined;
 
             if (targetType === "ALL") {
                 query = { isFollowing: true };
@@ -46,13 +79,47 @@ const worker = new Worker(
                 };
             } else if (targetType === "SPECIFIC_USERS" && targetIds.length > 0) {
                 query = {
+                    // Check existing customers if they match lineUserIds
                     lineUserId: { in: targetIds }
                 };
+                // NOTE: If we want to send to users NOT in DB, we should separate logic.
+                // But typically Admin Panel operates on its DB. 
+                // The "Specific Users" often implies raw IDs. 
+                // If we restrict to `findMany`, we only msg those we "know".
+                // Allow "Manual" to be strictly DB-bound for now to enable tracking?
+                // Or loop `targetIds` directly instead of querying DB?
+                // Let's stick to DB query to maintain consistency with `customer` loop below.
+            } else if (targetType === "SINGLE" && targetIds.length > 0) {
+                query = { lineUserId: targetIds[0] }; // One user
+            } else if (targetType === "LIMIT" && targetIds.length > 0) {
+                const limit = Number(targetIds[0]);
+                if (!isNaN(limit) && limit > 0) {
+                    take = limit;
+                    query = { isFollowing: true };
+                    orderBy = { updatedAt: "desc" }; // Valid assumption: "Recent active" often implied by limit
+                }
+            } else if (targetType === "SEGMENT" && targetIds.length > 0) {
+                const segment = targetIds[0];
+                const now = new Date();
+                const dateThreshold = new Date();
+
+                if (segment === "ACTIVE_7_DAYS") {
+                    dateThreshold.setDate(now.getDate() - 7);
+                    query = { isFollowing: true, updatedAt: { gte: dateThreshold } };
+                } else if (segment === "ACTIVE_30_DAYS") {
+                    dateThreshold.setDate(now.getDate() - 30);
+                    query = { isFollowing: true, updatedAt: { gte: dateThreshold } };
+                } else if (segment === "NEW_USER_30_DAYS") {
+                    dateThreshold.setDate(now.getDate() - 30);
+                    query = { isFollowing: true, createdAt: { gte: dateThreshold } };
+                }
             }
 
             const customers = await prisma.customer.findMany({
                 where: query,
                 select: { id: true, lineUserId: true, displayName: true },
+                take: take,
+                orderBy: orderBy,
             });
 
             console.log(`[Job ${job.id}] Found ${customers.length} target customers.`);
@@ -138,7 +205,9 @@ const worker = new Worker(
                 await new Promise((resolve) => setTimeout(resolve, 50));
 
                 // Update job progress
-                await job.updateProgress(Math.round(((sentCount + failedCount) / customers.length) * 100));
+                if (customers.length > 0) {
+                    await job.updateProgress(Math.round(((sentCount + failedCount) / customers.length) * 100));
+                }
             }
 
             // 4. Update Log to COMPLETED

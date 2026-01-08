@@ -12,24 +12,84 @@ export async function calculateRecipientCount(
     targetIds?: string[]
 ) {
     try {
-        const query: Prisma.CustomerWhereInput = { isFollowing: true };
-
-        if (targetType === "TAG" && targetIds && targetIds.length > 0) {
-            query.tags = { hasSome: targetIds };
-        } else if (targetType === "RICH_MENU" && targetIds && targetIds.length > 0) {
-            query.richMenuAliasId = { in: targetIds };
-        } else if (targetType === "SPECIFIC_USERS" && targetIds && targetIds.length > 0) {
-            // For specific users, we are passing LineUserIDs.
-            // However, if we store internal Customer IDs, we'd check `id`.
-            // Assuming targetIds contains Line User IDs for now as per UI:
-            query.lineUserId = { in: targetIds };
+        if (targetType === "ALL") {
+            const count = await prisma.customer.count({ where: { isBlocked: false } });
+            return { success: true, count };
         }
 
-        // If targetConfig is used for more complex logic (e.g. JSON), handle it here.
-        // For now, we rely on targetIds for simple TAG/RICH_MENU/USER selection.
+        if (targetType === "ALL_FRIENDS") {
+            // Cannot accurately count without Insight API
+            return { success: true, count: 0 };
+        }
 
-        const count = await prisma.customer.count({ where: query });
-        return { success: true, count };
+        if (targetType === "TAG" && targetIds && targetIds.length > 0) {
+            const count = await prisma.customer.count({
+                where: {
+                    isBlocked: false,
+                    tags: { hasSome: targetIds }
+                }
+            });
+            return { success: true, count };
+        }
+
+        if (targetType === "RICH_MENU" && targetIds && targetIds.length > 0) {
+            const count = await prisma.customer.count({
+                where: {
+                    isBlocked: false,
+                    richMenuAliasId: targetIds[0]
+                }
+            });
+            return { success: true, count };
+        }
+
+        if (targetType === "SPECIFIC_USERS" && targetIds) {
+            return { success: true, count: targetIds.length };
+        }
+
+        if (targetType === "SINGLE") {
+            return { success: true, count: 1 };
+        }
+
+        if (targetType === "LIMIT" && targetIds && targetIds.length > 0) {
+            const limit = Number(targetIds[0]);
+            if (isNaN(limit)) return { success: true, count: 0 };
+            const total = await prisma.customer.count({ where: { isBlocked: false } });
+            return { success: true, count: Math.min(limit, total) };
+        }
+
+        if (targetType === "SEGMENT" && targetIds && targetIds.length > 0) {
+            const segmentType = targetIds[0];
+            const now = new Date();
+            const dateThreshold = new Date();
+
+            if (segmentType === "ACTIVE_7_DAYS") {
+                dateThreshold.setDate(now.getDate() - 7);
+                const count = await prisma.customer.count({
+                    where: { isBlocked: false, updatedAt: { gte: dateThreshold } }
+                });
+                return { success: true, count };
+            }
+
+            if (segmentType === "ACTIVE_30_DAYS") {
+                dateThreshold.setDate(now.getDate() - 30);
+                const count = await prisma.customer.count({
+                    where: { isBlocked: false, updatedAt: { gte: dateThreshold } }
+                });
+                return { success: true, count };
+            }
+
+            if (segmentType === "NEW_USER_30_DAYS") {
+                dateThreshold.setDate(now.getDate() - 30);
+                const count = await prisma.customer.count({
+                    where: { isBlocked: false, createdAt: { gte: dateThreshold } }
+                });
+                return { success: true, count };
+            }
+
+            return { success: true, count: 0 };
+        }
+
+        return { success: true, count: 0 };
     } catch (error) {
         console.error("Error calculating recipient count:", error);
         return { success: false, count: 0, error: "Failed to calculate count" };

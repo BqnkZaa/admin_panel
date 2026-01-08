@@ -99,6 +99,14 @@ export default function BroadcastForm() {
                 targetIds = selectedRichMenuAliasId ? [selectedRichMenuAliasId] : [];
             } else if (targetType === "SPECIFIC_USERS") {
                 targetIds = specificUserIds.split(",").map(id => id.trim()).filter(id => id);
+            } else if (targetType === "LIMIT" || targetType === "SEGMENT" || targetType === "SINGLE") {
+                // Reuse specificUserIds as the "value" holder
+                targetIds = [specificUserIds];
+            } else if (targetType === "ALL_FRIENDS") {
+                // Cannot count
+                setRecipientCount(null);
+                setIsCounting(false);
+                return;
             }
 
             // Optimize: unnecessary calls
@@ -108,6 +116,11 @@ export default function BroadcastForm() {
                 return;
             }
             if (targetType === "RICH_MENU" && targetIds.length === 0) {
+                setRecipientCount(0);
+                setIsCounting(false);
+                return;
+            }
+            if ((targetType === "LIMIT" || targetType === "SEGMENT" || targetType === "SINGLE") && !specificUserIds) {
                 setRecipientCount(0);
                 setIsCounting(false);
                 return;
@@ -185,6 +198,7 @@ export default function BroadcastForm() {
         if (targetType === "TAG") targetIds = selectedTags;
         else if (targetType === "RICH_MENU") targetIds = selectedRichMenuAliasId ? [selectedRichMenuAliasId] : [];
         else if (targetType === "SPECIFIC_USERS") targetIds = specificUserIds.split(",").map(id => id.trim()).filter(id => id);
+        else if (targetType === "LIMIT" || targetType === "SEGMENT" || targetType === "SINGLE") targetIds = [specificUserIds];
 
         startTransition(async () => {
             const result = await sendBroadcast({
@@ -216,9 +230,13 @@ export default function BroadcastForm() {
 
     const isTargetValid =
         targetType === "ALL" ||
+        targetType === "ALL_FRIENDS" ||
         (targetType === "TAG" && selectedTags.length > 0) ||
         (targetType === "RICH_MENU" && selectedRichMenuAliasId !== "") ||
-        (targetType === "SPECIFIC_USERS" && specificUserIds.trim().length > 0);
+        (targetType === "SPECIFIC_USERS" && specificUserIds.trim().length > 0) ||
+        (targetType === "LIMIT" && Number(specificUserIds) > 0) ||
+        (targetType === "SEGMENT" && specificUserIds !== "") ||
+        (targetType === "SINGLE" && specificUserIds.trim().length > 0);
 
     const isValid = broadcastName.trim().length > 0 && isContentValid && isTargetValid;
 

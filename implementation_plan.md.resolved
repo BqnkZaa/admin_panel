@@ -1,103 +1,56 @@
-# Broadcast Feature Upgrade Implementation Plan
+# Enabling All Broadcast Targeting Options
 
-## Goal Description
-Upgrade the Broadcast feature to match the "Pro" UI, enabling advanced targeting (Tags, Specific Users), real-time recipient counting, and support for Image messages. This involves full-stack updates from the database schema to the UI and background worker.
+The goal is to enable all targeting options shown in the "Pro" design reference ("เพื่อนทั้งหมด", "จำกัดจำนวน", "Segment", "คนเดียว") which were previously disabled. This involves updating the database schema, UI, server actions, and the background worker.
 
 ## User Review Required
-> [!IMPORTANT]
-> This upgrade involves a database schema change. A migration will be required.
+> [!WARNING]
+> This requires a database migration to add new values to the `BroadcastTarget` enum. 
+> `ALL_FRIENDS` targets everyone via LINE Broadcast API (bypassing DB). 
+> `SEGMENT` will be implemented with basic "Active Users" logic for now.
 
 ## Proposed Changes
 
-### Database ([prisma/schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma))
-- Modify `BroadcastTarget` enum:
-    - Add `TAG`
-    - Add `SPECIFIC_USERS`
-- Modify [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#88-104) model:
-    - Add `name` is already present. (Wait, checking schema...)
-    - Schema has `name String`. Use this for "Broadcast Title".
-    - `content` is [Json](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#83-93). Can hold image data.
-    - `targetIds` is `String[]`. Can hold Tag IDs or User IDs.
-    - **Wait, `targetConfig` was requested.**
-    - User requested: `Add targetConfig (Json?)`.
-    - Current schema has `targetIds String[]`.
-    - If I use `targetIds`, it might be enough for `TAG` (list of tag names/ids) and `SPECIFIC_USERS` (list of user IDs).
-    - `RICH_MENU` targeting uses `targetIds` currently ?
-    - Let's check [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts): `if (targetType === "RICH_MENU" && targetIds.length > 0) ... richMenuAliasId: { in: targetIds }`.
-    - So `targetIds` works for a list of strings.
-    - For `TAG`, we can store tag names in `targetIds`.
-    - For `SPECIFIC_USERS`, we can store lineUserIds in `targetIds`.
-    - **However**, the user explicitly asked for `targetConfig (Json?)`.
-    - Reason: "To store details like `["tag_vip", "tag_new"]` or specific user IDs."
-    - If `targetIds` (String[]) is already there, maybe `targetConfig` is redundant?
-    - `targetIds` is `String[]`.
-    - If we follow the user request strictly, we add `targetConfig`.
-    - But `targetIds` is cleaner for simple arrays.
-    - Let's look at `BroadcastLog` user mentioned.
-    - Schema has [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#88-104) model. It does not have `BroadcastLog`. I assume "BroadcastLog" meant the [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#88-104) model which serves as a log/record.
-    - User asked: `Add title (String?)`. Schema has `name String`. I will use `name`.
-    - User asked: `Add targetConfig (Json?)`.
-    - If I use `targetIds` for tags, it works.
-    - I'll stick to `targetIds` if possible to avoid schema bloat, but if the user *really* wants `targetConfig` for future proofing (complex objects), I should consider it.
-    - But `targetIds` is `String[]`.
-    - I will **add `targetConfig`** as requested to be safe and strictly follow instructions, maybe they want to store more than just IDs (e.g. boolean logic).
-    - Actually, `targetIds` is `String[]`. If we want to store `AND` vs `OR` logic for tags, we might need JSON.
-    - I'll add `targetConfig` (Json) and `title` (Wait, `name` exists. I'll check if `name` is what they meant. "Broadcast Title" input -> `name`. I'll assume `name` is enough, but user said "Add title (String?)". I'll double check if I should rename or alias. The current `name` is used. I'll use `name` for "Broadcast Title").
-
-### Server Actions
-#### [src/actions/broadcast.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts)
-- **[NEW]** `calculateRecipientCount(targetType, targetConfig)`
-    - Queries Prisma `count()` based on targeting.
-    - Returns number of matching customers.
-- **[MODIFY]** [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-65)
-    - Update signature to accept `targetConfig` (or map to it).
-    - Support `messageType` check (Image vs Text vs Flex).
+### Database Schema
+#### [MODIFY] [schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma)
+- Update `BroadcastTarget` enum:
+    - Add `ALL_FRIENDS` (Broadcast API)
+    - Add `LIMIT` (First N users)
+    - Add `SEGMENT` (Logic-based groups)
+    - Add `SINGLE` (Single user)
 
 ### UI Components
-#### [src/components/broadcast/broadcast-form.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx)
-- **[MODIFY]** [BroadcastForm](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#45-421)
-    - Top-level "Broadcast Name" input (maps to `name`).
-    - Message Type Selection: Text, Image, Flex.
-    - Image Input: URL input + Preview.
-    - Targeting UI:
-        - Grid/Card selection.
-        - `TAG`: Multi-select from `Tag` model.
-        - `SPECIFIC_USERS`: Text input (comma separated) or better UI? User said "Simple input for User ID (for now)".
-    - Recipient Counter:
-        - `useEffect` hook listening to `targetType` & config changes.
-        - Calls `calculateRecipientCount`.
-        - Displays count in blue bar.
+#### [MODIFY] [broadcast-form.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx)
+- Enable all [TargetOption](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx#578-604) buttons.
+- specific inputs for each new target type:
+    - **LIMIT**: Input for number (e.g., 100).
+    - **SEGMENT**: Dropdown for segments (e.g., "Active Users (7 days)", "New Users (30 days)").
+    - **SINGLE**: Input for User ID.
+    - **ALL_FRIENDS**: Info text explaining it uses LINE Broadcast API.
+- Update validation logic.
 
-### Worker
-#### [src/workers/run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
-- **[MODIFY]** Broadcast processing logic.
-    - Handle `TAG` target: `prisma.customer.findMany({ where: { tags: { hasSome: targetConfig } } })` (or similar array filter).
-    - Handle `IMAGE` message construction for LINE API.
+### Server Actions
+#### [MODIFY] [broadcast.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts)
+- Update [calculateRecipientCount](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-38):
+    - `ALL_FRIENDS`: Return 0 or "Unknown" (since we don't know total followers without Insight API, might just say "All Followers").
+    - `LIMIT`: Return the limit number.
+    - `SEGMENT`: Query count based on segment logic.
+    - `SINGLE`: Return 1.
+- Update [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#39-97):
+    - Handle new types and pass config to [Broadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#120-136) creation.
+
+### Background Worker
+#### [MODIFY] [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
+- Update `processBroadcast`:
+    - `ALL_FRIENDS`: Use `client.broadcast(messages)`.
+    - `LIMIT`: Fetch `take: n` customers.
+    - `SEGMENT`: logic for filtering (e.g. `updatedAt` > 7 days ago).
+    - `SINGLE`: Send to 1 ID.
 
 ## Verification Plan
-
 ### Automated Tests
-- None existing for UI interactions.
-- Will rely on manual verification.
+- Build verification.
 
 ### Manual Verification
-1.  **Database Migration**: Run `npx prisma migrate dev --name upgrade_broadcast` and check DB schema.
-2.  **UI Check**:
-    - Go to `/broadcast`.
-    - Check "Broadcast Name" input.
-    - Check "Image" option is available.
-    - Check "Tags" targeting option.
-    - Select a tag -> Check if "Sending to X users" bar updates.
-3.  **Functional Test**:
-    - **Tag Broadcast**:
-        - Assign a tag to a test user in DB (or via UI if available).
-        - Send a broadcast to that tag.
-        - Verify test user receives it.
-    - **Image Broadcast**:
-        - Send an image broadcast.
-        - Verify it renders as image on LINE/Simulator.
-    - **Specific User**:
-        - Send to specific Line User ID.
-        - Verify receipt.
-4.  **Worker Log**:
-    - Check worker console logs for proper count and successful send.
+- Test creating broadcasts with each new target type.
+- Verify "Recipient Count" updates correctly for each.
+- Verify behavior in [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts) by logging (or running actual broadcast if safe/test env).
