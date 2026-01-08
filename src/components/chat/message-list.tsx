@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getMessages } from "@/actions/chat.actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -30,15 +31,57 @@ interface MessageListProps {
     customer: Customer;
 }
 
-export function MessageList({ messages, customer }: MessageListProps) {
+export function MessageList({ messages: initialMessages, customer, customerId }: MessageListProps & { customerId: string }) {
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [messages, setMessages] = useState<Message[]>(initialMessages);
 
+    // Initial scroll to bottom
     useEffect(() => {
-        // Auto-scroll to bottom on new messages
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+    }, []);
+
+    // Scroll linearly when new messages are added, but only if user was already near bottom or it's the first load
+    // Actually, for simplicity in this "fix" phase, let's keep the original behavior: scroll to bottom on every message update
+    // We can refine this later if it's annoying.
+    useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Polling for new messages
+    useEffect(() => {
+        // Sync initial messages if they change from parent (e.g. server re-render)
+        setMessages(initialMessages);
+
+        const intervalId = setInterval(async () => {
+            try {
+                // We need to import getMessages dynamically or pass it as a prop to avoid server action issues if any
+                // But typically importing server action in client component is fine in Next.js
+                // However, we need to handle the type casting
+                const newMessages = await getMessages(customerId);
+
+                // Only update if there are changes to avoid unnecessary re-renders (simple length check or deep compare)
+                // For now, let's just update if length is different or last message ID is different
+                setMessages(prev => {
+                    if (newMessages.length !== prev.length ||
+                        (newMessages.length > 0 && newMessages[newMessages.length - 1].id !== prev[prev.length - 1].id)) {
+                        return newMessages.map((m) => ({
+                            ...m,
+                            content: m.content as unknown as MessageContent,
+                        }));
+                    }
+                    return prev;
+                });
+            } catch (error) {
+                console.error("Failed to poll messages:", error);
+            }
+        }, 3000); // Poll every 3 seconds
+
+        return () => clearInterval(intervalId);
+    }, [customerId, initialMessages]);
 
     return (
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">

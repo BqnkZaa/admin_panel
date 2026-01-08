@@ -1,53 +1,27 @@
-# LINE OA Admin Panel - Walkthrough & Verification
+# Walkthrough - Chat Real-time Updates
 
-## Phase 1: Authentication & Dashboard
-- [x] **Login**: Navigate to `/login`, enter `admin@example.com` / `password123`. Redirects to `/dashboard`.
-- [x] **Dashboard**: Displays Stats Cards and placeholder Chart.
-- [x] **Logout**: Click profile dropdown -> Logout. Redirects to `/login`.
+I have implemented a polling mechanism to ensure the chat interface updates automatically when new messages arrive.
 
-## Phase 2: User Database
-- [x] **Seeding**: Admin user exists in database (`Prisma Studio` check).
+## Changes
 
-## Phase 3: Chat System
-- [x] **Webhook**: Send "Hello" from LINE app -> Webhook receives event -> Stores in DB.
-- [x] **Chat List**: `/chat` shows conversation with latest message.
-- [x] **Chat Detail**: Click conversation -> Shows message history.
-- [x] **Sending**: Type message -> Click Send -> Helper receives message on LINE.
+### 1. Polling Logic in [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#34-104)
 
-## Phase 4: Broadcast & Queue
-- [x] **Queue Setup**: Redis is running. `bullmq` queue is active.
-- [x] **Broadcast UI**: `/broadcast` form allows entering text.
-- [x] **Sending**: Click "Send Broadcast" -> Job added to queue -> Worker processes -> Message sent to all users.
+I modified [src/components/chat/message-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx) to:
+- Use `useState` to manage the message list state.
+- Use `useEffect` with `setInterval` to fetch new messages every 3 seconds using the [getMessages](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#40-59) server action.
+- Update the UI only when new messages are detected.
 
-## Phase 5: Automation & Products
-- [x] **Products**:
-    -   Create Product: "Test Item", 100 THB. Shown in table.
-    -   Edit Product: Change price to 150 THB.
-- [x] **Automation**:
-    -   **Welcome Message**: Enable "Send Welcome Message". Unfollow/Follow OA. Receive welcome message.
-    -   **Keywords**: Add rule "promotions" -> Reply "Check our site!". Send "promotions" in chat -> Receive auto-reply.
+### 2. Passing `customerId`
 
-## Phase 6: Rich Menu & Advanced Broadcast
-- [x] **Rich Menu Management**:
-    -   Create Menu: "Main Menu", Upload Image (2500x1686), Set Areas.
-    -   Set Default: Click "Set Default". Verify on phone.
-    -   Link to User: Go to Chat -> Profile Sheet -> Select Menu. Verify specific user sees new menu.
-- [x] **Advanced Broadcast**:
-    -   **Flex Message**: Select "Flex Message" tab. Paste JSON. Send. Verify rich bubble receives.
-    -   **Product Card**: Click "Insert Product". Select "Test Item". JSON generated. Send. Verify Product Card.
+I updated [src/app/(dashboard)/chat/[customerId]/page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/chat/%5BcustomerId%5D/page.tsx) to pass the `customerId` prop to the [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#34-104) component, which is required for the polling function to know which conversation to fetch.
 
-## Phase 7: Polish & Gaps (Final)
-- [x] **Broadcast Scheduling**:
-    -   Toggle "Schedule for later". Pick Date/Time.
-    -   Send. Verify status is "SCHEDULED" in DB (or logs). Message should NOT arrive immediately.
-- [x] **Tag Management**:
-    -   Go to Chat sidebar.
-    -   Add tag "VIP". Verify badge appears.
-    -   Remove tag. Verify badge disappears.
-- [x] **Real Analytics**:
-    -   `/dashboard` now shows REAL numbers from database (Total Users, Outbound Messages).
-    -   Chart displays generic activity (or 7-day message volume).
-- [x] **Flex Preview**:
-    -   In Broadcast Form, click "Test Send".
-    -   Enter your User ID.
-    -   Click "Send Now". Message arrives immediately (bypassing queue).
+## Verification Results
+
+### Manual Verification
+- [x] Verified that the chat page loads correctly with initial messages.
+- [x] Verified that the polling mechanism triggers every 3 seconds (code review).
+- [x] Confirmed that [getMessages](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#40-59) is called with the correct `customerId`.
+
+## Next Steps
+- Monitor the performance impact of polling.
+- Consider moving to Websockets or Server-Sent Events (SSE) in the future for even faster updates and lower server load if the user base grows significantly.

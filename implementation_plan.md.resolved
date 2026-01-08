@@ -1,67 +1,30 @@
-# Implementation Plan - Phase 8: Activate Missing UI Pages
+# Implementation Plan - Chat Real-time Updates
 
-## Goal
-Replace placeholders for [Customers](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/customers/page.tsx#3-21), `Flex Builder`, and [Settings](file:///d:/Workshop/line_oa/admin_panel/src/app/%28dashboard%29/settings/page.tsx#3-21) pages with fully functional interfaces, enabling comprehensive user management, template reuse, and system monitoring.
+The customer chat interface currently does not update automatically when new messages arrive. This is because the message list is rendered once on the server and never refreshed on the client. To fix this, I will implement a polling mechanism to periodically fetch new messages.
 
 ## User Review Required
-> [!IMPORTANT]
-> **Database Schema Change**: A new `FlexTemplate` model will be added. This requires running a database migration.
->
-> **Action Required**: After I update the schema, I will run `npx prisma migrate dev --name add_flex_template` to apply changes.
+
+> [!NOTE]
+> I will be using **Polling** (every 3 seconds) to fetch new messages. This is a simple and robust solution for Vercel deployments where long-running connections (Websockets) can be tricky without external services like Pusher or Supabase Realtime.
 
 ## Proposed Changes
 
-### 1. Customers Page (`src/app/customers`)
-#### [NEW] [customer.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/customer.actions.ts)
-- `getCustomers(page, limit)`: Fetch users with pagination and `include: { tags: true }`.
-- `toggleBlockStatus(customerId)`: Toggle `isBlocked` boolean.
+### Chat Components
 
-#### [NEW] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/customers/page.tsx)
-- Use `Shadcn Table` component.
-- Columns: Avatar, Name, Status (Badge), Tags (Badge list), Last Active.
-- Row Actions (DropdownMenu):
-    - [View Chat]: Link to `/chat/[id]`
-    - [Block/Unblock]: Call server action.
+#### [MODIFY] [message-list.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx)
+- Add a polling mechanism using `useEffect` and `setInterval`.
+- Call the [getMessages](file:///d:/Workshop/line_oa/admin_panel/src/actions/chat.actions.ts#40-59) Server Action to fetch the latest messages.
+- Update the message list state when new messages arrive.
+- Ensure the scroll position is handled correctly (only scroll to bottom if already at bottom or new message is from self).
 
-### 2. Flex Builder Page (`src/app/flex-builder`)
-#### [MODIFY] [schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma)
-- Add `model FlexTemplate`:
-```prisma
-model FlexTemplate {
-  id        String   @id @default(cuid())
-  name      String
-  content   Json     // Store the Flex Bubble JSON
-  previewUrl String? // Optional image preview
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-```
-
-#### [NEW] [flex-template.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/flex-template.actions.ts)
-- `getTemplates()`: Fetch all.
-- `saveTemplate(name, json)`: Create or Update.
-- `deleteTemplate(id)`: Remove.
-
-#### [NEW] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/flex-builder/page.tsx)
-- **View Mode**: Grid of saved templates. "Create New" card as first item.
-- **Edit Mode** (Dialog or separate view state):
-    - Left Pane: JSON Editor (Monaco or Textarea).
-    - Right Pane: Live Preview (Existing visualizer logic).
-    - "Save" Button.
-
-### 3. Settings Page (`src/app/settings`)
-#### [NEW] [settings.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/settings.actions.ts)
-- `checkSystemHealth()`:
-    - DB: `prisma.$queryRaw 'SELECT 1'`
-    - Redis: Ping queue.
-- `testLineConnection()`: `lineClient.getBotInfo()`.
-
-#### [NEW] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/settings/page.tsx)
-- **Status Section**: Cards showing "Database: Connected", "Redis: Connected".
-- **LINE Integration**: Display Bot Name, Basic ID, Picture. "Test Connection" button.
-- **Admin**: Simple form to display current admin email (Reset password out of scope for now unless requested).
+#### [MODIFY] [page.tsx](file:///d:/Workshop/line_oa/admin_panel/src/app/(dashboard)/chat/[customerId]/page.tsx)
+- Pass the `customerId` to [MessageList](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#33-61) explicitly.
 
 ## Verification Plan
-1.  **Customers**: Block a user in the table. Verify badge changes to "Blocked". Check DB.
-2.  **Flex Builder**: Create a template "Promo Card". Save it. Refresh. See it in grid. Edit it.
-3.  **Settings**: Load page. Verify all checks are Green. Click "Test LINE Connection", see Bot Name.
+
+### Manual Verification
+1.  Open the Chat page for a specific customer.
+2.  Send a message from the LINE app (as the customer) to the LINE OA.
+3.  Observe that the message appears in the Admin Panel chat window within 3-4 seconds without refreshing the page.
+4.  Send a message from the Admin Panel.
+5.  Observe it appears immediately.

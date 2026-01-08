@@ -90,6 +90,7 @@ export default async function CustomerChatPage({ params }: ChatPageProps) {
 
             {/* Messages */}
             <MessageList
+                customerId={customerId}
                 messages={messages.map((m) => ({
                     ...m,
                     content: m.content as unknown as MessageContent,
