@@ -200,44 +200,109 @@ async function handleMessageEvent(userId: string, event: LineMessageEvent) {
 
     // 4. Check for Auto-Reply Keyword (Only for text messages)
     if (messageType === 'TEXT' && userMessageText) {
-        const keywordMatch = await prisma.autoReplyKeyword.findFirst({
-            where: {
-                isActive: true,
-                keyword: userMessageText.trim(), // Simple exact match logic for now
-                // For 'CONTAINS' we might need raw query or fetch all and filter in JS if list is small.
-                // Assuming schema has MatchType, but findFirst with 'contains' is not dynamic based on row value.
-                // For Phase 5 MVP, we'll strip to exact match or simple query.
-                // Let's rely on finding WHERE keyword equals user input for EXACT.
-            },
+        // Fetch all active rules to match in memory (needed for Regex)
+        // Optimization: In a large scale system, we might cache this or use a more efficient search strategy.
+        const allRules = await prisma.autoReplyKeyword.findMany({
+            where: { isActive: true },
+            orderBy: { priority: 'desc' } // Higher priority first
         });
 
-        if (keywordMatch && keywordMatch.replyContent) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const replyContent = keywordMatch.replyContent as any;
-            if (replyContent.type === 'text' && replyContent.text) {
+        let matchedRule = null;
+        let matchSource = null;
+
+        // A. Exact Match
+        matchedRule = allRules.find(r => r.matchType === 'EXACT' && r.keyword === userMessageText.trim());
+
+        // B. Regex Match (if no exact match)
+        if (!matchedRule) {
+            matchedRule = allRules.find(r => {
+                if (r.matchType !== 'REGEX') return false;
+                try {
+                    const regex = new RegExp(r.keyword, 'i'); // Case insensitive default
+                    return regex.test(userMessageText.trim());
+                } catch {
+                    return false;
+                }
+            });
+        }
+
+        if (matchedRule) {
+            console.log(`Matched Rule: ${matchedRule.keyword} (${matchedRule.matchType})`);
+
+            // 1. Assign Tags if any
+            if (matchedRule.tagsToAdd && matchedRule.tagsToAdd.length > 0) {
+                // Merge new tags with existing unique tags
+                const currentTags = customer.tags || [];
+                const newTags = Array.from(new Set([...currentTags, ...matchedRule.tagsToAdd]));
+
+                await prisma.customer.update({
+                    where: { id: customer.id },
+                    data: { tags: newTags }
+                });
+                console.log(`Added tags: ${matchedRule.tagsToAdd.join(', ')}`);
+            }
+
+            // 2. Construct Reply Message
+            let messagePayload: any = null;
+
+            if (matchedRule.replyType === 'TEXT') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const content = matchedRule.replyContent as any;
+                if (content && content.text) {
+                    messagePayload = { type: 'text', text: content.text };
+                }
+            } else if (matchedRule.replyType === 'FLEX') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const content = matchedRule.replyContent as any;
+                if (content) {
+                    messagePayload = {
+                        type: 'flex',
+                        altText: matchedRule.altText || 'Flex Message',
+                        contents: content
+                    };
+                }
+            }
+
+            // 3. Add Custom Sender & Quick Replies
+            if (messagePayload) {
+                // Custom Sender
+                if (matchedRule.senderName || matchedRule.senderIconUrl) {
+                    messagePayload.sender = {
+                        name: matchedRule.senderName,
+                        iconUrl: matchedRule.senderIconUrl
+                    };
+                }
+
+                // Quick Replies
+                if (matchedRule.quickReplies) {
+                    messagePayload.quickReply = matchedRule.quickReplies;
+                }
+
                 try {
                     // Send Reply
                     if (event.replyToken) {
                         await lineClient.replyMessage({
                             replyToken: event.replyToken,
-                            messages: [{ type: 'text', text: replyContent.text }]
+                            messages: [messagePayload]
                         });
                     }
 
                     // Log the Auto-Reply Message (Outbound)
+                    // Note: We strip sender/quickReply from log content for cleaner DB storage if preferred,
+                    // but storing full payload is also fine.
                     await prisma.message.create({
                         data: {
                             customerId: customer.id,
                             conversationId: conversation.id,
-                            type: 'TEXT',
+                            type: matchedRule.replyType,
                             direction: 'OUTBOUND',
-                            content: { type: 'text', text: replyContent.text },
+                            content: messagePayload,
                             status: 'DELIVERED',
                             sentAt: new Date(),
                         }
                     });
 
-                    console.log(`Auto-replied to ${userId} with: ${replyContent.text}`);
+                    console.log(`Auto-replied to ${userId}`);
 
                 } catch (err) {
                     console.error("Failed to send auto-reply:", err);

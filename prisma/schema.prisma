@@ -230,9 +230,15 @@ model RichMenu {
 model AutoReplyKeyword {
   id           String   @id @default(cuid())
   keyword      String
-  matchType    MatchType @default(CONTAINS)
+  matchType    MatchType @default(EXACT)
   replyType    MessageType @default(TEXT)
   replyContent Json
+  altText      String?
+  senderName   String?
+  senderIconUrl String?
+  quickReplies Json?
+  tagsToAdd    String[]
+  description  String?
   isActive     Boolean  @default(true)
   priority     Int      @default(0)
   createdAt    DateTime @default(now())

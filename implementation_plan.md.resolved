@@ -1,51 +1,67 @@
-# Implementation Plan - Rich Menu Broadcast Targeting
+# Auto-Reply System Upgrade Plan
 
-The goal is to allow sending broadcasts to users who currently have a specific Rich Menu assigned.
+## Goal Description
+Upgrade the current simple "Keyword -> Reply" system to a "Pro" rule engine. This includes adding support for Regex matching, Custom Sender Identities (override bot name/icon), Flex Messages (JSON payload), Quick Replies, and automatic Tag assignment.
 
 ## User Review Required
-
 > [!IMPORTANT]
-> **Data Synchronization**: This feature relies on the database knowing which user has which Rich Menu.
-> Currently, the system does not track this in the [Customer](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#24-28) table when linking menus.
-> I will update the "Link Rich Menu" action to save this state to the database.
-> **Note**: This will only track *future* changes made through this Admin Panel. Users who already have a menu assigned (or assigned outside this system) may not be reachable until they are re-linked via this panel.
+> The default `matchType` for new keywords will be changed to `EXACT` (currently schema says `CONTAINS`, but code defaults to `EXACT` in [keyword-settings.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/automation/keyword-settings.tsx)).
+> I will update the schema default to `EXACT` as requested.
 
 ## Proposed Changes
 
 ### Database Schema
 #### [MODIFY] [schema.prisma](file:///d:/Workshop/line_oa/admin_panel/prisma/schema.prisma)
-- Update `enum BroadcastTarget` to include `RICH_MENU`.
+- Update `AutoReplyKeyword` model:
+    - Change `matchType` default to `EXACT`.
+    - Add `description` (String?).
+    - Add `senderName` (String?).
+    - Add `senderIconUrl` (String?).
+    - Add `quickReplies` (Json?).
+    - Add `tagsToAdd` (String[]).
 
-### Backend Actions
+### UI Components
+#### [MODIFY] [keyword-settings.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/automation/keyword-settings.tsx)
+- Redesign the "Add/Edit Rule" Dialog with a Tabbed or Accordion interface.
+- **Trigger Tab**: Keyword, Match Type (Exact/Regex), Description.
+- **Reply Tab**:
+    - Reply Type Selector (Text / Flex).
+    - Content Editor (Textarea for Text, JSON Editor for Flex).
+    - Sender Identity (Name, Icon).
+    - Quick Replies Builder (Dynamic list of buttons).
+- **Actions Tab**:
+    - Tags input (Add tags to user on match).
 
-#### [MODIFY] [rich-menu.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts)
-- Update [linkRichMenuToUser](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts#138-153): Add `prisma.customer.update({ data: { richMenuAliasId: richMenuId } })`.
-- Update [unlinkRichMenuFromUser](file:///d:/Workshop/line_oa/admin_panel/src/actions/rich-menu.actions.ts#154-168): Add `prisma.customer.update({ data: { richMenuAliasId: null } })`.
-
-#### [MODIFY] [broadcast.actions.ts](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts)
-- Update [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-62) validation to allow `targetType: "RICH_MENU"`.
-
-### Workers
-
-#### [MODIFY] [run.ts](file:///d:/Workshop/line_oa/admin_panel/src/workers/run.ts)
-- Update customer query logic:
-    - If `targetType === "RICH_MENU"`, fetch customers where `richMenuAliasId` (or mapped field) matches the target.
-
-### Frontend
-
-#### [MODIFY] [broadcast-form.tsx](file:///d:/Workshop/line_oa/admin_panel/src/components/broadcast/broadcast-form.tsx)
-- Add "Target: Rich Menu" radio option.
-- When selected, fetch and display a dropdown of available Rich Menus.
-- Pass the selected Rich Menu ID to the [sendBroadcast](file:///d:/Workshop/line_oa/admin_panel/src/actions/broadcast.actions.ts#10-62) action.
+### Backend Logic
+#### [MODIFY] [route.ts](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts)
+- Refactor [handleMessageEvent](file:///d:/Workshop/line_oa/admin_panel/src/app/api/webhook/line/route.ts#137-285) to support complex matching.
+- **Matching Logic**:
+    - Fetch active rules.
+    - Iterate to check `EXACT` matches first, then `REGEX`.
+    - Use `new RegExp(keyword).test(userMessage)` for regex type.
+- **Execution Logic**:
+    - If match found:
+        - Construct message payload (TEXT or FLEX).
+        - append `sender` and `quickReply` objects if present.
+        - Send reply via `lineClient`.
+        - Apply `tagsToAdd` to the `Customer` record.
 
 ## Verification Plan
 
+### Automated Tests
+- None existing for UI interactions.
+
 ### Manual Verification
-1.  **Setup**: Go to Rich Menu page, link "Menu A" to "Test User".
-2.  **Verify DB**: Check if [Customer](file:///d:/Workshop/line_oa/admin_panel/src/components/chat/message-list.tsx#24-28) record for "Test User" has `richMenuAliasId` set.
-3.  **Broadcast**:
-    -   Create a new Broadcast.
-    -   Select Target "Rich Menu" -> "Menu A".
-    -   Send.
-4.  **Confirm**: Verify that "Test User" receives the message.
-5.  **Negative Test**: Link "Menu B" to another user (or unlink), send broadcast to "Menu A", confirm they do *not* receive it.
+1.  **Database Migration**: Run `npx prisma migrate dev` and verify no errors.
+2.  **UI Testing**:
+    - Open Automation > Auto-Reply.
+    - Create a rule with **Regex** (e.g., `^hello.*`).
+    - Set a **Custom Sender** (e.g., "Support Bot").
+    - Add a **Quick Reply** button.
+    - Add a **Tag** to apply (e.g., "Tested").
+3.  **Functional Testing** (requires LINE App):
+    - Send "hello world" to the bot.
+    - Verify:
+        - Bot replies with custom sender name/icon.
+        - Quick reply buttons appear.
+        - Admin Panel > Users tag list includes "Tested".

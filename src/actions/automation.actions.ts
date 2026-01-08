@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { MatchType } from "@prisma/client";
+import { MatchType, MessageType } from "@prisma/client";
 
 // ========== WELCOME MESSAGE ACTIONS ==========
 
@@ -66,10 +66,19 @@ export async function getKeywords() {
     }
 }
 
+// ... existing code ...
+
 export async function createKeyword(data: {
     keyword: string;
-    replyContent: string;
     matchType: MatchType;
+    replyType: MessageType;
+    replyContent: any; // Text string or Flex JSON
+    altText?: string;
+    senderName?: string;
+    senderIconUrl?: string;
+    quickReplies?: any; // Array of objects
+    tagsToAdd?: string[];
+    description?: string;
     isActive: boolean;
 }) {
     const session = await auth();
@@ -80,8 +89,14 @@ export async function createKeyword(data: {
             data: {
                 keyword: data.keyword,
                 matchType: data.matchType,
-                replyType: "TEXT",
-                replyContent: { type: "text", text: data.replyContent },
+                replyType: data.replyType,
+                replyContent: data.replyContent,
+                altText: data.altText,
+                senderName: data.senderName,
+                senderIconUrl: data.senderIconUrl,
+                quickReplies: data.quickReplies,
+                tagsToAdd: data.tagsToAdd || [],
+                description: data.description,
                 isActive: data.isActive,
             },
         });
@@ -90,6 +105,47 @@ export async function createKeyword(data: {
     } catch (error) {
         console.error("Error creating keyword:", error);
         return { success: false, error: "Failed to create keyword" };
+    }
+}
+
+export async function updateKeyword(id: string, data: {
+    keyword: string;
+    matchType: MatchType;
+    replyType: MessageType;
+    replyContent: any;
+    altText?: string;
+    senderName?: string;
+    senderIconUrl?: string;
+    quickReplies?: any;
+    tagsToAdd?: string[];
+    description?: string;
+    isActive: boolean;
+}) {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Unauthorized" };
+
+    try {
+        await prisma.autoReplyKeyword.update({
+            where: { id },
+            data: {
+                keyword: data.keyword,
+                matchType: data.matchType,
+                replyType: data.replyType,
+                replyContent: data.replyContent,
+                altText: data.altText,
+                senderName: data.senderName,
+                senderIconUrl: data.senderIconUrl,
+                quickReplies: data.quickReplies,
+                tagsToAdd: data.tagsToAdd || [],
+                description: data.description,
+                isActive: data.isActive,
+            },
+        });
+        revalidatePath("/automation");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating keyword:", error);
+        return { success: false, error: "Failed to update keyword" };
     }
 }
 
