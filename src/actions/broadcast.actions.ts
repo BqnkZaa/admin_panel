@@ -11,6 +11,7 @@ export async function sendBroadcast(data: {
     name: string;
     messageContent: unknown;
     targetType: BroadcastTarget;
+    targetIds?: string[];
     scheduledAt?: Date;
 }) {
     const session = await auth();
@@ -35,7 +36,7 @@ export async function sendBroadcast(data: {
                 name: data.name,
                 content: data.messageContent as Prisma.InputJsonValue,
                 targetType: data.targetType,
-                targetIds: [], // TODO: Implement selection
+                targetIds: data.targetIds || [],
                 status: status,
                 scheduledAt: scheduledTime,
                 createdById: session.user.id,
@@ -46,6 +47,8 @@ export async function sendBroadcast(data: {
         await broadcastQueue.add(BROADCAST_QUEUE_NAME, {
             broadcastId: broadcast.id,
             messageContent: data.messageContent,
+            targetType: data.targetType,
+            targetIds: data.targetIds || [],
             segment: "all",
         }, {
             delay: delay,
