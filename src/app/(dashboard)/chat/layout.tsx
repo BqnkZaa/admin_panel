@@ -1,5 +1,6 @@
 import { getConversations } from "@/actions/chat.actions";
-import { ChatList, type Conversation } from "@/components/chat/chat-list";
+import { type Conversation } from "@/components/chat/chat-list";
+import { ChatLayoutShell } from "@/components/chat/chat-layout-shell";
 
 export default async function ChatLayout({
     children,
@@ -17,22 +18,8 @@ export default async function ChatLayout({
     })) as Conversation[];
 
     return (
-        <div className="flex h-[calc(100vh-5rem)] gap-4">
-            {/* Conversation List Sidebar */}
-            <div className="w-80 border rounded-lg bg-card flex-shrink-0 hidden md:flex flex-col">
-                <div className="p-4 border-b">
-                    <h2 className="font-semibold">การสนทนา</h2>
-                    <p className="text-sm text-muted-foreground">
-                        {conversations.length} รายการ
-                    </p>
-                </div>
-                <ChatList conversations={conversations} />
-            </div>
-
-            {/* Chat Window */}
-            <div className="flex-1 border rounded-lg bg-card flex flex-col min-w-0">
-                {children}
-            </div>
-        </div>
+        <ChatLayoutShell conversations={conversations}>
+            {children}
+        </ChatLayoutShell>
     );
 }

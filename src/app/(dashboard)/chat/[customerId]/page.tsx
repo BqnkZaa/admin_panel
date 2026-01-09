@@ -5,11 +5,12 @@ import { MessageInput } from "@/components/chat/message-input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Phone } from "lucide-react";
+import { MoreVertical, Phone, ChevronLeft } from "lucide-react";
 import { getRichMenus, getRichMenuIdOfUser } from "@/actions/rich-menu.actions";
 import { CustomerProfileSheet } from "@/components/chat/customer-profile-sheet";
 import { RichMenuResponse } from "@line/bot-sdk";
 import { RichMenuSelector } from "@/components/chat/rich-menu-selector";
+import Link from "next/link";
 
 interface ChatPageProps {
     params: { customerId: string };
@@ -35,12 +36,17 @@ export default async function CustomerChatPage({ params }: ChatPageProps) {
         <>
             {/* Chat Header */}
             <div className="flex items-center justify-between p-4 border-b">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 md:gap-3">
+                    <Link href="/chat" className="md:hidden">
+                        <Button variant="ghost" size="icon" className="-ml-2 h-8 w-8 text-slate-500">
+                            <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                    </Link>
                     <Avatar className="h-10 w-10">
                         <AvatarImage src={customer.pictureUrl || ""} />
                         <AvatarFallback>{customer.displayName?.[0] || "?"}</AvatarFallback>
                     </Avatar>
-                    <div>
+                    <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                             <h2 className="font-semibold">
                                 {customer.displayName || "ไม่ทราบชื่อ"}
@@ -106,4 +112,3 @@ export default async function CustomerChatPage({ params }: ChatPageProps) {
         </>
     );
 }
-
