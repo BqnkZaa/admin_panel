@@ -94,7 +94,7 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                             <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">
                                 <div className="flex flex-col items-center gap-2">
                                     <p>ไม่พบสินค้าในระบบ</p>
-                                    <p className="text-xs">คลิกปุ่ม "เพิ่มสินค้าใหม่" เพื่อเริ่มสร้างแคตตาล็อกของคุณ</p>
+                                    <p className="text-xs">คลิกปุ่ม &quot;เพิ่มสินค้าใหม่&quot; เพื่อเริ่มสร้างแคตตาล็อกของคุณ</p>
                                 </div>
                             </TableCell>
                         </TableRow>
