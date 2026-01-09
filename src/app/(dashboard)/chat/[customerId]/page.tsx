@@ -48,7 +48,7 @@ export default async function CustomerChatPage({ params }: ChatPageProps) {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                            <h2 className="font-semibold">
+                            <h2 className="font-semibold truncate">
                                 {customer.displayName || "ไม่ทราบชื่อ"}
                             </h2>
                             {customer.isFollowing ? (
@@ -70,7 +70,7 @@ export default async function CustomerChatPage({ params }: ChatPageProps) {
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <div className="mr-2">
+                    <div className="mr-2 hidden md:block">
                         <RichMenuSelector
                             userId={customer.lineUserId}
                             currentRichMenuId={currentRichMenuId}
@@ -78,9 +78,14 @@ export default async function CustomerChatPage({ params }: ChatPageProps) {
                             variant="minimal"
                         />
                     </div>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="md:hidden">
                         <Phone className="h-4 w-4" />
                     </Button>
+                    <div className="hidden md:block">
+                        <Button variant="ghost" size="icon">
+                            <Phone className="h-4 w-4" />
+                        </Button>
+                    </div>
 
                     <CustomerProfileSheet
                         customer={customer}
