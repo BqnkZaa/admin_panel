@@ -7,7 +7,6 @@ import {
     Card,
     CardContent,
     CardHeader,
-    // CardDescription, CardTitle removed
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -71,8 +70,6 @@ export default function BroadcastForm() {
     useEffect(() => {
         // Fetch Rich Menus
         getRichMenus().then(menus => {
-            // Adapt to expected format. LINE SDK returns { richMenuId, name, ... }
-            // We use richMenuId for both ID and aliasId since that's what we store in Customer.richMenuAliasId
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             setRichMenus(menus.map((m: any) => ({
                 richMenuId: m.richMenuId,
@@ -100,16 +97,13 @@ export default function BroadcastForm() {
             } else if (targetType === "SPECIFIC_USERS") {
                 targetIds = specificUserIds.split(",").map(id => id.trim()).filter(id => id);
             } else if (targetType === "LIMIT" || targetType === "SEGMENT" || targetType === "SINGLE") {
-                // Reuse specificUserIds as the "value" holder
                 targetIds = [specificUserIds];
             } else if (targetType === "ALL_FRIENDS") {
-                // Cannot count
                 setRecipientCount(null);
                 setIsCounting(false);
                 return;
             }
 
-            // Optimize: unnecessary calls
             if (targetType === "TAG" && targetIds.length === 0) {
                 setRecipientCount(0);
                 setIsCounting(false);
@@ -126,19 +120,16 @@ export default function BroadcastForm() {
                 return;
             }
 
-            // Debounce could be added here if this causes too many requests, 
-            // but for now relying on react effects isn't too spammy unless user types furiously in specificUserIds
-
             const result = await calculateRecipientCount(targetType, targetIds);
             if (result.success) {
                 setRecipientCount(result.count);
             } else {
-                setRecipientCount(null); // Error state
+                setRecipientCount(null);
             }
             setIsCounting(false);
         };
 
-        const timer = setTimeout(fetchCount, 500); // 500ms debounce
+        const timer = setTimeout(fetchCount, 500);
         return () => clearTimeout(timer);
     }, [targetType, selectedTags, selectedRichMenuAliasId, specificUserIds]);
 
@@ -183,7 +174,7 @@ export default function BroadcastForm() {
         if (!content) return;
 
         if (!broadcastName.trim()) {
-            toast({ title: "กรุณาระบุชื่อ Broadcast", variant: "destructive" });
+            toast({ title: "กรุณาระบุชื่อการบรอดแคสต์", variant: "destructive" });
             return;
         }
 
@@ -207,12 +198,10 @@ export default function BroadcastForm() {
                 targetType: targetType,
                 targetIds: targetIds,
                 scheduledAt: scheduledAt,
-                // Passing full config not strictly needed if we just use targetIds for now as per action logic
             });
 
             if (result.success) {
-                toast({ title: "บันทึกข้อมูลเรียบร้อย!" });
-                // Reset form slightly
+                toast({ title: "สร้างบรอดแคสต์สำเร็จ!" });
                 setTextMessage("");
                 setImageUrl("");
                 setBroadcastName("");
@@ -246,12 +235,12 @@ export default function BroadcastForm() {
             <CardHeader className="px-0 pt-0">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className="text-base font-semibold text-slate-700">หัวข้อ (สำหรับบันทึก)</Label>
+                        <Label className="text-base font-semibold text-slate-900">ชื่อแคมเปญ</Label>
                         <Input
-                            placeholder="เช่น โปรโมชั่นเดือนธันวาคม"
+                            placeholder="ระบุชื่อแคมเปญ (เช่น โปรโมชั่นปีใหม่)"
                             value={broadcastName}
                             onChange={(e) => setBroadcastName(e.target.value)}
-                            className="text-base py-5 bg-white border-slate-200 focus-visible:ring-emerald-500"
+                            className="text-base py-5 bg-white border-slate-200 focus-visible:ring-purple-600 rounded-xl"
                         />
                     </div>
                 </div>
@@ -260,7 +249,7 @@ export default function BroadcastForm() {
 
                 {/* 1. Message Type Selector */}
                 <div className="space-y-3">
-                    <Label className="text-base font-semibold text-slate-700">ประเภทข้อความ</Label>
+                    <Label className="text-base font-semibold text-slate-900">รูปแบบข้อความ</Label>
                     <div className="flex flex-wrap gap-3">
                         <MessageTypeOption
                             active={messageType === "text"}
@@ -288,18 +277,18 @@ export default function BroadcastForm() {
                     {messageType === "text" && (
                         <div className="p-3 space-y-2">
                             <div className="flex justify-between items-center mb-1">
-                                <Label className="text-slate-700 font-medium">ข้อความ</Label>
-                                <div className="text-xs text-blue-600 cursor-pointer flex items-center gap-1">
-                                    <Sparkles className="w-3 h-3" /> ใช้ AI ช่วยคิด
+                                <Label className="text-slate-700 font-medium">เนื้อหาข้อความ</Label>
+                                <div className="text-xs text-purple-600 cursor-pointer flex items-center gap-1 hover:text-purple-700 transition-colors">
+                                    <Sparkles className="w-3 h-3" /> ให้ AI ช่วยเขียน
                                 </div>
                             </div>
                             <Textarea
                                 placeholder="พิมพ์ข้อความที่ต้องการส่ง..."
-                                className="min-h-[200px] text-base resize-none border-0 focus-visible:ring-0 p-0 shadow-none"
+                                className="min-h-[200px] text-base resize-none border-0 focus-visible:ring-0 p-3 shadow-none bg-slate-50 rounded-lg"
                                 value={textMessage}
                                 onChange={(e) => setTextMessage(e.target.value)}
                             />
-                            <div className="pt-2 border-t flex justify-between text-xs text-muted-foreground">
+                            <div className="pt-2 flex justify-between text-xs text-muted-foreground px-1">
                                 <span>รองรับ Emoji และข้อความยาวสูงสุด 2,000 ตัวอักษร</span>
                                 <span>{textMessage.length}/2000</span>
                             </div>
@@ -309,13 +298,14 @@ export default function BroadcastForm() {
                     {messageType === "image" && (
                         <div className="p-4 space-y-4">
                             <div className="space-y-2">
-                                <Label>ลิงก์รูปภาพ (ต้องเป็น HTTPS)</Label>
+                                <Label>ลิงก์รูปภาพ (URL)</Label>
                                 <Input
                                     placeholder="https://example.com/image.jpg"
                                     value={imageUrl}
                                     onChange={(e) => setImageUrl(e.target.value)}
                                     className="bg-slate-50"
                                 />
+                                <p className="text-xs text-muted-foreground">แนะนำให้ใช้รูปสี่เหลี่ยมจัตุรัส หรือ 16:9 ขนาดไม่เกิน 10MB</p>
                             </div>
                             {imageUrl && (
                                 <div className="flex justify-center bg-slate-100 rounded-lg p-4">
@@ -334,19 +324,19 @@ export default function BroadcastForm() {
                     {messageType === "flex" && (
                         <div className="p-4 space-y-4">
                             <div className="flex justify-between items-center">
-                                <Label>Flex Message JSON</Label>
+                                <Label>โค้ด Flex Message (JSON)</Label>
                                 <div className="flex gap-2">
-                                    <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => {
+                                    <Button variant="ghost" size="sm" className="h-8 text-xs text-slate-600" onClick={() => {
                                         const parsed = validateJson();
                                         if (parsed) setFlexJson(JSON.stringify(parsed, null, 2));
                                     }}>
-                                        จัดรูปแบบใหม่
+                                        จัดรูปแบบ
                                     </Button>
                                     <ProductPickerDialog onProductSelect={handleProductSelect} />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs text-muted-foreground">Alt Text (ข้อความแทนรูปภาพ)</Label>
+                                <Label className="text-xs text-muted-foreground">ข้อความแทนรูปภาพ (Alt Text)</Label>
                                 <Input
                                     value={altText}
                                     onChange={(e) => setAltText(e.target.value)}
@@ -375,7 +365,7 @@ export default function BroadcastForm() {
 
                 {/* 2. Targeting Section */}
                 <div className="space-y-3">
-                    <Label className="text-base font-semibold text-slate-700">ส่งถึง</Label>
+                    <Label className="text-base font-semibold text-slate-900">เลือกกลุ่มเป้าหมาย</Label>
 
                     <div className="space-y-3">
                         {/* Row 1 */}
@@ -384,25 +374,25 @@ export default function BroadcastForm() {
                                 active={targetType === "ALL"}
                                 onClick={() => setTargetType("ALL")}
                                 icon={<Database className="w-4 h-4" />}
-                                label="ในฐานข้อมูล"
+                                label="ลูกค้าทั้งหมด"
                             />
                             <TargetOption
                                 active={targetType === "ALL_FRIENDS"}
                                 onClick={() => setTargetType("ALL_FRIENDS")}
                                 icon={<Users className="w-4 h-4" />}
-                                label="เพื่อนทั้งหมด"
+                                label="เพื่อนทุกคน"
                             />
                             <TargetOption
                                 active={targetType === "LIMIT"}
                                 onClick={() => setTargetType("LIMIT")}
                                 icon={<Hash className="w-4 h-4" />}
-                                label="จำกัดจำนวน"
+                                label="สุ่มตามจำนวน"
                             />
                             <TargetOption
                                 active={targetType === "SEGMENT"}
                                 onClick={() => setTargetType("SEGMENT")}
                                 icon={<Layers className="w-4 h-4" />}
-                                label="Segment"
+                                label="แบ่งกลุ่ม (Segment)"
                             />
                         </div>
 
@@ -412,25 +402,25 @@ export default function BroadcastForm() {
                                 active={targetType === "TAG"}
                                 onClick={() => setTargetType("TAG")}
                                 icon={<Tag className="w-4 h-4" />}
-                                label="Tag"
+                                label="ติดแท็ก (Tags)"
                             />
                             <TargetOption
                                 active={targetType === "RICH_MENU"}
                                 onClick={() => setTargetType("RICH_MENU")}
                                 icon={<Users2 className="w-4 h-4" />}
-                                label="ริชเมนู"
+                                label="ตาม Rich Menu"
                             />
                             <TargetOption
-                                active={targetType === "SPECIFIC_USERS"} // Using this for "Manual"
+                                active={targetType === "SPECIFIC_USERS"}
                                 onClick={() => setTargetType("SPECIFIC_USERS")}
                                 icon={<UserPlus className="w-4 h-4" />}
-                                label="เลือกเอง"
+                                label="ระบุ User ID"
                             />
                             <TargetOption
                                 active={targetType === "SINGLE"}
                                 onClick={() => setTargetType("SINGLE")}
                                 icon={<User className="w-4 h-4" />}
-                                label="คนเดียว"
+                                label="รายบุคคล"
                             />
                         </div>
                     </div>
@@ -439,7 +429,7 @@ export default function BroadcastForm() {
                     <div className="custom-target-settings mt-2">
                         {targetType === "TAG" && (
                             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
-                                <Label>เลือก Tags</Label>
+                                <Label>เลือก Tags ที่ต้องการส่ง</Label>
                                 {availableTags.length === 0 ? (
                                     <div className="text-sm text-yellow-600">ไม่พบ Tags ในระบบ</div>
                                 ) : (
@@ -449,8 +439,8 @@ export default function BroadcastForm() {
                                                 key={tag}
                                                 variant={selectedTags.includes(tag) ? "default" : "outline"}
                                                 className={cn(
-                                                    "cursor-pointer text-sm py-1.5 px-3 transition-colors",
-                                                    selectedTags.includes(tag) ? "bg-emerald-500 hover:bg-emerald-600 border-transparent" : "hover:bg-slate-100"
+                                                    "cursor-pointer text-sm py-1.5 px-3 transition-colors rounded-lg",
+                                                    selectedTags.includes(tag) ? "bg-purple-600 hover:bg-purple-700 border-transparent" : "hover:bg-slate-100"
                                                 )}
                                                 onClick={() => toggleTag(tag)}
                                             >
@@ -464,10 +454,10 @@ export default function BroadcastForm() {
 
                         {targetType === "RICH_MENU" && (
                             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
-                                <Label>เลือก Rich Menu Group</Label>
+                                <Label>เลือกกลุ่มตาม Rich Menu</Label>
                                 <Select value={selectedRichMenuAliasId} onValueChange={setSelectedRichMenuAliasId}>
                                     <SelectTrigger className="bg-slate-50">
-                                        <SelectValue placeholder="เลือกริชเมนู" />
+                                        <SelectValue placeholder="เลือกเมนู..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {richMenus.map(m => (
@@ -482,7 +472,7 @@ export default function BroadcastForm() {
 
                         {targetType === "SPECIFIC_USERS" && (
                             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
-                                <Label>Line User IDs (คั่นด้วยเครื่องหมายจุลภาค ,)</Label>
+                                <Label>ระบุ Line User IDs (คั่นด้วยคอมม่า)</Label>
                                 <Textarea
                                     placeholder="U1234..., U5678..."
                                     value={specificUserIds}
@@ -494,7 +484,7 @@ export default function BroadcastForm() {
 
                         {targetType === "LIMIT" && (
                             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
-                                <Label>จำนวนคนที่จะส่ง (คน)</Label>
+                                <Label>จำนวนคนที่ต้องการส่ง (คน)</Label>
                                 <Input
                                     type="number"
                                     placeholder="เช่น 100"
@@ -503,21 +493,21 @@ export default function BroadcastForm() {
                                     className="bg-slate-50"
                                     min={1}
                                 />
-                                <p className="text-xs text-muted-foreground">ระบบจะสุ่มส่งข้อความให้เท่ากับจำนวนที่ระบุ</p>
+                                <p className="text-xs text-muted-foreground">ระบบจะสุ่มลูกค้าให้ครบตามจำนวนที่ระบุ</p>
                             </div>
                         )}
 
                         {targetType === "SEGMENT" && (
                             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
-                                <Label>เลือกกลุ่มเป้าหมาย (Segment)</Label>
+                                <Label>เลือกเกณฑ์ (Segment)</Label>
                                 <Select value={specificUserIds} onValueChange={setSpecificUserIds}>
                                     <SelectTrigger className="bg-slate-50">
-                                        <SelectValue placeholder="เลือก Segment" />
+                                        <SelectValue placeholder="เลือกเงื่อนไข..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="ACTIVE_7_DAYS">ใช้งานใน 7 วันล่าสุด</SelectItem>
                                         <SelectItem value="ACTIVE_30_DAYS">ใช้งานใน 30 วันล่าสุด</SelectItem>
-                                        <SelectItem value="NEW_USER_30_DAYS">เพิ่มเพื่อนใหม่ใน 30 วันล่าสุด</SelectItem>
+                                        <SelectItem value="NEW_USER_30_DAYS">เป็นเพื่อนใหม่ใน 30 วันล่าสุด</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -525,14 +515,14 @@ export default function BroadcastForm() {
 
                         {targetType === "SINGLE" && (
                             <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-3 animate-in slide-in-from-top-2">
-                                <Label>LINE User ID</Label>
+                                <Label>ระบุ Line User ID</Label>
                                 <Input
                                     placeholder="U1234..."
                                     value={specificUserIds}
                                     onChange={(e) => setSpecificUserIds(e.target.value)}
                                     className="bg-slate-50 font-mono text-sm"
                                 />
-                                <p className="text-xs text-muted-foreground">ระบุ User ID ของลูกค้าเพียงคนเดียว</p>
+                                <p className="text-xs text-muted-foreground">สำหรับส่งหาลูกค้าคนเดียวเท่านั้น</p>
                             </div>
                         )}
                     </div>
@@ -540,12 +530,20 @@ export default function BroadcastForm() {
 
                 {/* Counter & Action */}
                 <div className="space-y-4 pt-4">
-                    {/* Blue Info Bar */}
-                    <div className="bg-blue-50 text-blue-800 px-4 py-3 rounded-lg flex items-center gap-3 border border-blue-100">
-                        <Database className="w-5 h-5 text-blue-600" />
-                        <span className="font-medium text-base">
-                            จะส่งข้อความถึงผู้ใช้ในฐานข้อมูล <span className="text-blue-700 font-bold text-lg">{isCounting ? "..." : (recipientCount !== null ? recipientCount.toLocaleString() : "-")}</span> คน
-                        </span>
+                    {/* Info Bar */}
+                    <div className="bg-purple-50 text-purple-900 px-4 py-4 rounded-xl flex items-center gap-3 border border-purple-100">
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
+                            <Users className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-medium">จำนวนผู้รับโดยประมาณ</p>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-bold text-purple-700">
+                                    {isCounting ? "..." : (recipientCount !== null ? recipientCount.toLocaleString() : "-")}
+                                </span>
+                                <span className="text-sm text-purple-600">คน</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Schedule Toggle */}
@@ -554,17 +552,18 @@ export default function BroadcastForm() {
                             id="schedule-mode"
                             checked={isScheduled}
                             onCheckedChange={setIsScheduled}
+                            className="data-[state=checked]:bg-purple-600"
                         />
-                        <Label htmlFor="schedule-mode" className="cursor-pointer text-slate-700">ตั้งเวลาส่งล่วงหน้า</Label>
+                        <Label htmlFor="schedule-mode" className="cursor-pointer text-slate-700 font-medium">ตั้งเวลาส่งล่วงหน้า</Label>
                     </div>
 
                     {isScheduled && (
-                        <div className="flex gap-4 p-4 border rounded-xl bg-white animate-in fade-in slide-in-from-top-2">
+                        <div className="flex flex-col sm:flex-row gap-4 p-4 border rounded-xl bg-slate-50 animate-in fade-in slide-in-from-top-2">
                             <div className="flex-1 space-y-2">
                                 <Label>วันที่</Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white", !scheduledDate && "text-muted-foreground")}>
+                                        <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal bg-white h-11", !scheduledDate && "text-muted-foreground")}>
                                             <CalendarIcon className="mr-2 h-4 w-4" />
                                             {scheduledDate ? format(scheduledDate, "PPP", { locale: th }) : <span>เลือกวันที่</span>}
                                         </Button>
@@ -580,13 +579,13 @@ export default function BroadcastForm() {
                                     </PopoverContent>
                                 </Popover>
                             </div>
-                            <div className="w-[150px] space-y-2">
+                            <div className="w-full sm:w-[150px] space-y-2">
                                 <Label>เวลา</Label>
                                 <div className="relative">
-                                    <Clock className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Clock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="time"
-                                        className="pl-8 bg-white"
+                                        className="pl-9 bg-white h-11"
                                         value={scheduledTime}
                                         onChange={(e) => setScheduledTime(e.target.value)}
                                     />
@@ -596,18 +595,18 @@ export default function BroadcastForm() {
                     )}
 
                     <Button
-                        className="w-full h-12 text-lg font-medium bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-200 transition-all hover:shadow-xl"
+                        className="w-full h-14 text-lg font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-xl shadow-lg shadow-purple-200 transition-all hover:shadow-xl hover:-translate-y-0.5"
                         onClick={handleSend}
                         disabled={isPending || !isValid || (isScheduled && !scheduledDate)}
                     >
                         {isPending ? (
                             <>
                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                กำลังดำเนินการ...
+                                กำลังส่งข้อความ...
                             </>
                         ) : (
                             <>
-                                <Send className="mr-2 h-5 w-5" /> ส่งข้อความ
+                                <Send className="mr-2 h-5 w-5" /> ยืนยันการส่งข้อความ
                             </>
                         )}
                     </Button>
@@ -625,21 +624,21 @@ function MessageTypeOption({ active, onClick, icon, label }: { active: boolean, 
         <button
             onClick={onClick}
             className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm font-medium",
+                "flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-sm font-medium min-w-[140px] shadow-sm",
                 active
-                    ? "bg-emerald-50 border-emerald-500 text-emerald-700 ring-1 ring-emerald-500"
-                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                    ? "bg-purple-50 border-purple-500 text-purple-700 ring-1 ring-purple-500"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
             )}
         >
             <div className={cn(
-                "w-4 h-4 rounded-full border flex items-center justify-center",
-                active ? "border-emerald-500" : "border-slate-300"
+                "w-8 h-8 rounded-full border flex items-center justify-center transition-colors",
+                active ? "bg-white border-purple-200 text-purple-600" : "bg-slate-50 border-slate-200 text-slate-400"
             )}>
-                {active && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
-            </div>
-            <div className="flex items-center gap-2">
                 {icon}
-                {label}
+            </div>
+            <div className="flex flex-col items-start leading-none gap-0.5">
+                <span className={active ? "text-purple-900 font-semibold" : "text-slate-700"}>{label}</span>
+                {active && <span className="text-[10px] text-purple-500">เลือกแล้ว</span>}
             </div>
         </button>
     );
@@ -650,26 +649,19 @@ function TargetOption({ active, onClick, icon, label }: { active: boolean, onCli
         <button
             onClick={onClick}
             className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg border transition-all text-sm min-w-[120px]",
+                "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all text-sm min-w-[120px]",
                 active
                     ? "bg-blue-50 border-blue-500 text-blue-700 ring-1 ring-blue-500"
                     : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
             )}
         >
             <div className={cn(
-                "w-4 h-4 rounded-full border flex items-center justify-center",
-                active ? "border-blue-500" : "border-slate-300"
+                "p-1.5 rounded-md flex items-center justify-center transition-colors",
+                active ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-500"
             )}>
-                {active && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                {icon}
             </div>
-            <div className="flex items-center gap-2">
-                <div className={cn("p-1 rounded bg-slate-100", active && "bg-blue-100")}>
-                    {icon}
-                </div>
-                {label}
-            </div>
+            <span className="font-medium">{label}</span>
         </button>
     );
 }
-
-

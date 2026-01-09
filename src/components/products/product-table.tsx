@@ -32,10 +32,10 @@ interface ProductTableProps {
 
 export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) {
     return (
-        <div className="rounded-md border">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <Table>
-                <TableHeader>
-                    <TableRow>
+                <TableHeader className="bg-slate-50">
+                    <TableRow className="border-b border-slate-100">
                         <TableHead className="w-[80px]">รูปภาพ</TableHead>
                         <TableHead>SKU</TableHead>
                         <TableHead>ชื่อสินค้า</TableHead>
@@ -47,25 +47,25 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                 </TableHeader>
                 <TableBody>
                     {products.map((product) => (
-                        <TableRow key={product.id}>
+                        <TableRow key={product.id} className="hover:bg-slate-50 border-b border-slate-100 last:border-0">
                             <TableCell>
-                                <Avatar className="h-10 w-10 rounded-md">
+                                <Avatar className="h-10 w-10 rounded-lg border border-slate-100">
                                     <AvatarImage src={product.imageUrl || ""} alt={product.name} />
-                                    <AvatarFallback className="rounded-md">
+                                    <AvatarFallback className="rounded-lg bg-orange-50 text-orange-600 font-bold">
                                         {product.name.substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
                                 </Avatar>
                             </TableCell>
-                            <TableCell className="font-medium">{product.sku}</TableCell>
-                            <TableCell>{product.name}</TableCell>
+                            <TableCell className="font-medium text-slate-700">{product.sku}</TableCell>
+                            <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell>฿{product.price.toLocaleString()}</TableCell>
                             <TableCell>
-                                <Badge variant={product.stock > 0 ? "outline" : "destructive"}>
+                                <Badge variant="outline" className={product.stock > 0 ? "text-orange-600 border-orange-200 bg-orange-50" : "text-red-600 border-red-200 bg-red-50"}>
                                     {product.stock}
                                 </Badge>
                             </TableCell>
                             <TableCell>
-                                <Badge variant={product.isActive ? "default" : "secondary"}>
+                                <Badge variant={product.isActive ? "default" : "secondary"} className={product.isActive ? "bg-green-500 hover:bg-green-600" : ""}>
                                     {product.isActive ? "เปิดใช้งาน" : "ปิดใช้งาน"}
                                 </Badge>
                             </TableCell>
@@ -73,7 +73,7 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="mr-2"
+                                    className="mr-2 text-slate-500 hover:text-orange-600 hover:bg-orange-50"
                                     onClick={() => onEdit(product)}
                                 >
                                     <Edit className="h-4 w-4" />
@@ -81,17 +81,21 @@ export function ProductTable({ products, onEdit, onDelete }: ProductTableProps) 
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    className="text-slate-400 hover:text-red-600 hover:bg-red-50"
                                     onClick={() => onDelete(product.id)}
                                 >
-                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                    <Trash2 className="h-4 w-4" />
                                 </Button>
                             </TableCell>
                         </TableRow>
                     ))}
                     {products.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
-                                ไม่พบสินค้า คลิกปุ่ม &quot;เพิ่มสินค้า&quot; เพื่อเริ่มใช้งาน
+                            <TableCell colSpan={7} className="text-center h-32 text-muted-foreground">
+                                <div className="flex flex-col items-center gap-2">
+                                    <p>ไม่พบสินค้าในระบบ</p>
+                                    <p className="text-xs">คลิกปุ่ม "เพิ่มสินค้าใหม่" เพื่อเริ่มสร้างแคตตาล็อกของคุณ</p>
+                                </div>
                             </TableCell>
                         </TableRow>
                     )}

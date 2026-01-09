@@ -58,11 +58,14 @@ export function ProductClient({ initialProducts }: ProductClientProps) {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h2 className="text-3xl font-bold tracking-tight">สินค้า</h2>
-                <Button onClick={handleAdd}>
-                    <Plus className="mr-2 h-4 w-4" /> เพิ่มสินค้า
+                <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900">สินค้า</h2>
+                    <p className="text-slate-500">จัดการสินค้าและแคตตาล็อก</p>
+                </div>
+                <Button onClick={handleAdd} className="bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-100 transition-all hover:-translate-y-0.5 rounded-lg h-10 px-4">
+                    <Plus className="mr-2 h-4 w-4" /> เพิ่มสินค้าใหม่
                 </Button>
             </div>
 

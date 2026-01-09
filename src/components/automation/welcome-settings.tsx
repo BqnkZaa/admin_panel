@@ -85,7 +85,7 @@ export function WelcomeSettings({ initialData }: WelcomeSettingsProps) {
     };
 
     return (
-        <Card>
+        <Card className="rounded-xl border-slate-200 shadow-sm">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div>

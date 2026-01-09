@@ -12,45 +12,53 @@ export default async function DashboardPage() {
 
     const displayStats = [
         {
-            name: "ผู้ติดตามทั้งหมด",
+            name: "กำลังติดตาม", // Friendlier Thai: "Following" -> "กำลังติดตาม"
             value: stats?.totalUsers.toLocaleString() || "0",
-            change: stats?.newUsersToday ? `+${stats.newUsersToday} คนวันนี้` : "ไม่มีผู้ติดตามใหม่",
+            change: stats?.newUsersToday ? `+${stats.newUsersToday} คนวันนี้` : "ไม่มีผู้ใช้ใหม่",
             changeType: (stats?.newUsersToday || 0) > 0 ? "positive" as const : "neutral" as const,
             icon: Users,
+            iconColor: "text-blue-600",
+            iconBg: "bg-blue-100",
         },
         {
-            name: "ข้อความทั้งหมด (Outbound)",
+            name: "ส่งข้อความแล้ว",
             value: stats?.totalMessages.toLocaleString() || "0",
-            change: "จากระบบทั้งหมด",
+            change: "ข้อความทั้งหมด",
             changeType: "neutral" as const,
             icon: MessageSquare,
+            iconColor: "text-emerald-600",
+            iconBg: "bg-emerald-100",
         },
         {
             name: "โควต้าคงเหลือ",
             value: stats?.remainingQuota.toLocaleString() || "0",
-            change: "ประมาณการ (Mock)",
+            change: "ประมาณการ",
             changeType: "neutral" as const,
             icon: Send,
+            iconColor: "text-purple-600",
+            iconBg: "bg-purple-100",
         },
         {
             name: "สถานะระบบ",
             value: "ปกติ",
-            change: "ระบบทำงานปกติ",
+            change: "พร้อมใช้งาน",
             changeType: "positive" as const,
             icon: Activity,
+            iconColor: "text-orange-600",
+            iconBg: "bg-orange-100",
         },
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Page Header */}
             <div>
-                <h1 className="text-2xl md:text-3xl font-bold">ภาพรวมระบบ</h1>
-                <p className="text-muted-foreground">ภาพรวมระบบ LINE OA Admin Panel</p>
+                <h1 className="text-2xl font-bold text-slate-900">ภาพรวมระบบ</h1>
+                <p className="text-slate-500">สรุปข้อมูลสำคัญของ LINE Official Account</p>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {displayStats.map((stat) => (
                     <StatsCard
                         key={stat.name}
@@ -59,6 +67,8 @@ export default async function DashboardPage() {
                         change={stat.change}
                         changeType={stat.changeType}
                         icon={stat.icon}
+                        iconColor={stat.iconColor}
+                        iconBg={stat.iconBg}
                     />
                 ))}
             </div>
